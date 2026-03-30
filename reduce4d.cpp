@@ -1,7 +1,7 @@
 #include "gl_wrappers.hpp"
 #include "reduce4d.hpp"
 
-void reduce4d::initialize_sum_quads(
+void square_reduce4d::initialize_sum_quads(
     std::vector<Quad> &sum_quads, TextureParams params, 
     int max_dim, int min_dim) {
     for (int n = max_dim; n >= min_dim; n /= 2) {
@@ -11,15 +11,52 @@ void reduce4d::initialize_sum_quads(
     }
 }
 
-void reduce4d::reduce(std::vector<Quad> &sum_quads,
+void square_reduce4d::initialize_sum_quads(
+    Quad *sum_quads, TextureParams params, 
+    int max_dim, int min_dim) {
+    for (int n = max_dim, i = 0; n >= min_dim; n /= 2, i++) {
+        params.width = n;
+        params.height = n;
+        sum_quads[i].reset(params);
+    }
+}
+
+void square_reduce4d::reduce(std::vector<Quad> &sum_quads,
             uint32_t scale_program, const Quad &src) {
-    sum_quads[0].draw(scale_program,
-        {{"scale", {1.0F}}, {"tex", {&src}}}
-    );
-    for (int i = 1; i < sum_quads.size(); i++) {
+    int i = 0;
+    while (sum_quads[i].width() > src.width()/2) 
+        i++;
+    for (int j = i; j < sum_quads.size(); j++) {
+        IVec2 tex_dimensions2d {
+            .x=(int)((j == i)? sum_quads[j-1].width(): src.width()),
+            .y=(int)((j == i)? sum_quads[j-1].height(): src.height())
+        };
         sum_quads[i].draw(
             scale_program,
-            {{"scale", {4.0F}}, {"tex", {&sum_quads[i-1]}}}
-        );
+            {
+                {"scale", {4.0F}}, 
+                {"texDimensions2D", tex_dimensions2d},
+                {"tex", {(j == i)? &src: &sum_quads[j-1]}}
+            });
+    }
+}
+
+void square_reduce4d::reduce(Quad *sum_quads, int size,
+            uint32_t scale_program, const Quad &src) {
+    int i = 0;
+    while (sum_quads[i].width() > src.width()/2) 
+        i++;
+    for (int j = i; j < size; j++) {
+        IVec2 tex_dimensions2d {
+            .x=(int)((j == i)? sum_quads[j-1].width(): src.width()),
+            .y=(int)((j == i)? sum_quads[j-1].height(): src.height())
+        };
+        sum_quads[j].draw(
+            scale_program,
+            {
+                {"scale", {4.0F}},
+                {"texDimensions2D", tex_dimensions2d},
+                {"tex", {(j == i)? &src: &sum_quads[j-1]}}
+            });
     }
 }

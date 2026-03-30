@@ -1,12 +1,12 @@
-CPP_SOURCES = simulation.cpp \
+CPP_SOURCES = reduce4d.cpp simulation.cpp \
 	main.cpp \
 	interactor.cpp gl_wrappers.cpp glfw_window.cpp
-OBJECTS = simulation.o \
+OBJECTS = reduce4d.o simulation.o \
 	main.o \
 	interactor.o gl_wrappers.o glfw_window.o
 
 SHELL = /bin/bash
-FLAGS = -O2 -g
+FLAGS = -O0 -g
 C_COMPILE = clang
 CPP_COMPILE = clang++ -std=c++17
 LINKER = /usr/bin/ld

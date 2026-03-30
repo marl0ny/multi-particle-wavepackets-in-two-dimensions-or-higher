@@ -21,43 +21,16 @@ out vec4 fragColor;
 
 #define complex vec2
 
-#define PI 3.141592653589793
-
-uniform sampler2D reTex;
-uniform sampler2D imTex1;
-uniform sampler2D imTex2;
-uniform sampler2D potentialTex;
-uniform float waveFunctionBrightness;
+uniform sampler2D prob1Tex;
+uniform sampler2D prob2Tex;
+uniform sampler2D prevExternalVisTex;
+uniform float waveFunctionBrightness1;
+uniform float waveFunctionBrightness2;
 uniform float potentialBrightness;
-uniform vec4 dimensions4D;
-uniform ivec4 texelDimensions4D;
-
-
-vec2 to2DTextureCoordinates(vec4 textureCoordinate4D) {
-    float texelWidth2D = float(texelDimensions4D[0]*texelDimensions4D[1]);
-    float texelHeight2D = float(texelDimensions4D[2]*texelDimensions4D[3]);
-    float x = textureCoordinate4D[0]*float(texelDimensions4D[0]);
-    float y = textureCoordinate4D[1]*float(texelDimensions4D[1]);
-    float z = textureCoordinate4D[2]*float(texelDimensions4D[2]);
-    float w = textureCoordinate4D[3]*float(texelDimensions4D[3]);
-    return vec2((x + floor(y)*float(texelDimensions4D[0]))/texelWidth2D,
-                (z + floor(w)*float(texelDimensions4D[2]))/texelHeight2D);
-}
-
-vec4 to4DTextureCoordinates(vec2 textureCoordinate2D) {
-    float texelWidth2D = float(texelDimensions4D[0]*texelDimensions4D[1]);
-    float texelHeight2D = float(texelDimensions4D[2]*texelDimensions4D[3]);
-    vec2 texelPosition2D = vec2(textureCoordinate2D[0]*texelWidth2D,
-                                textureCoordinate2D[1]*texelHeight2D);
-    float x = mod(texelPosition2D[0], float(texelDimensions4D[0]));
-    float y = floor(texelPosition2D[0] / float(texelDimensions4D[0])) + 0.5;
-    float z = mod(texelPosition2D[1], float(texelDimensions4D[2]));
-    float w = floor(texelPosition2D[1] / float(texelDimensions4D[2])) + 0.5;
-    return vec4(
-        x/float(texelDimensions4D[0]), y/float(texelDimensions4D[1]),
-        z/float(texelDimensions4D[2]), w/float(texelDimensions4D[3]));
-}
 
 void main() {
-    
+    float p1 = 0.00025*waveFunctionBrightness1*texture2D(prob1Tex, UV)[0];
+    float p2 = 0.00025*waveFunctionBrightness2*texture2D(prob2Tex, UV)[0];
+    vec4 previousExternalVis = texture2D(prevExternalVisTex, UV);
+    fragColor = vec4(vec3(p1, 0.0, p2) + previousExternalVis.rgb, 1.0);
 }

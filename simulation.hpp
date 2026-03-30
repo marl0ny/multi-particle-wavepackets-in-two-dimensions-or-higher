@@ -15,9 +15,11 @@ struct Frames {
     Quad im_psi[2];
     Quad sim_tmp;
     Quad potential;
-    Quad re_psi_slice[2];
-    Quad im_psi_slice[2];
+    Quad reductions[9];
+    // std::vector<Quad> reductions;
+    Quad slices[4];
     Quad potential_slice;
+    RenderTarget render_tmp;
     RenderTarget render;
     WireFrame quad_wire_frame;
     Frames(const TextureParams &default_tex_params, const SimParams &params);
@@ -25,11 +27,12 @@ struct Frames {
 };
 
 struct Programs {
-    uint32_t scale, add2, add4_r, rgb_combine;
+    uint32_t scale, add2, add4_r, rgb_combine, uniform_color;
     uint32_t wave_packet, interaction;
     uint32_t time_step;
-    uint32_t transpose, norm_squared, slice;
-    uint32_t visualization1, perp_lines;
+    uint32_t transpose_norm_squared, norm_squared, slice;
+    uint32_t visualization1, visualization2, perp_lines;
+    uint32_t reduce_4x4;
     Programs();
 };
 
@@ -42,6 +45,11 @@ class Simulation {
     void initial_wave_function(
         const SimParams &params,
         Vec2 x1, Vec2 x2, Vec2 p1, Vec2 p2);
+    void particle1_prob_view(Quad &dst, const SimParams &params);
+    void particle2_prob_view(Quad &dst, const SimParams &params);
+    void entire_wave_func_view(const SimParams &params);
+    void wave_func_xy_slice_view(
+        RenderTarget &dst, IVec2 slice_coordinates, const SimParams &params);
     public:
     Simulation(
         const TextureParams &default_tex_params, 
@@ -51,7 +59,9 @@ class Simulation {
         Vec2 x1, Vec2 x2, Vec2 p1, Vec2 p2);
     void change_simulation_dimensions(const SimParams &params);
     void step(const SimParams &params);
-    const RenderTarget &view(const SimParams &params);
+    const RenderTarget &view(
+        const SimParams &params, 
+        const std::optional<Vec2> &hover);
     const RenderTarget
     &view(SimParams &params, ::Quaternion rotation, float scale);
 };

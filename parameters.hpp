@@ -26,10 +26,12 @@ struct NotUsed {};
 
 struct SimParams {
     int stepsPerFrame = (int)(1);
-    float dt = (float)(0.08F);
+    float dt = (float)(0.06F);
     float t = (float)(0.0F);
     float c = (float)(137.036F);
-    float brightness = (float)(0.1F);
+    float brightness1 = (float)(0.1F);
+    float brightness2 = (float)(0.1F);
+    float brightness3 = (float)(0.1F);
     float potentialBrightness = (float)(1.0F);
     float hbar = (float)(1.0F);
     LineDivider lineDiv1 = LineDivider{};
@@ -53,25 +55,27 @@ struct SimParams {
         DT=1,
         T=2,
         C=3,
-        BRIGHTNESS=4,
-        POTENTIAL_BRIGHTNESS=5,
-        HBAR=6,
-        LINE_DIV1=7,
-        SLIDER_SET_WAVE_FUNC_TITLE=8,
-        M1=9,
-        M2=10,
-        POS1=11,
-        POS2=12,
-        MOMENTUM1=13,
-        MOMENTUM2=14,
-        SIGMA1=15,
-        SIGMA2=16,
-        ENTER_WAVE_FUNC=17,
-        LINE_DIV2=18,
-        LOG2_TEX_WIDTH=19,
-        SLICE_COORD=20,
-        SLICE_IND=21,
-        SAMPLE_IND=22,
+        BRIGHTNESS1=4,
+        BRIGHTNESS2=5,
+        BRIGHTNESS3=6,
+        POTENTIAL_BRIGHTNESS=7,
+        HBAR=8,
+        LINE_DIV1=9,
+        SLIDER_SET_WAVE_FUNC_TITLE=10,
+        M1=11,
+        M2=12,
+        POS1=13,
+        POS2=14,
+        MOMENTUM1=15,
+        MOMENTUM2=16,
+        SIGMA1=17,
+        SIGMA2=18,
+        ENTER_WAVE_FUNC=19,
+        LINE_DIV2=20,
+        LOG2_TEX_WIDTH=21,
+        SLICE_COORD=22,
+        SLICE_IND=23,
+        SAMPLE_IND=24,
     };
     void set(int enum_val, Uniform val) {
         switch(enum_val) {
@@ -87,8 +91,14 @@ struct SimParams {
             case C:
             c = val.f32;
             break;
-            case BRIGHTNESS:
-            brightness = val.f32;
+            case BRIGHTNESS1:
+            brightness1 = val.f32;
+            break;
+            case BRIGHTNESS2:
+            brightness2 = val.f32;
+            break;
+            case BRIGHTNESS3:
+            brightness3 = val.f32;
             break;
             case POTENTIAL_BRIGHTNESS:
             potentialBrightness = val.f32;
@@ -144,8 +154,12 @@ struct SimParams {
             return {(float)t};
             case C:
             return {(float)c};
-            case BRIGHTNESS:
-            return {(float)brightness};
+            case BRIGHTNESS1:
+            return {(float)brightness1};
+            case BRIGHTNESS2:
+            return {(float)brightness2};
+            case BRIGHTNESS3:
+            return {(float)brightness3};
             case POTENTIAL_BRIGHTNESS:
             return {(float)potentialBrightness};
             case HBAR:

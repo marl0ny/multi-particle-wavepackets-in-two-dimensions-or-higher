@@ -64,8 +64,12 @@ void imgui_controls(void *void_params) {
             s_sim_params_set(params->STEPS_PER_FRAME, params->stepsPerFrame);
     if (ImGui::SliderFloat("Time step", &params->dt, 0.0, 0.08))
            s_sim_params_set(params->DT, params->dt);
-    if (ImGui::SliderFloat("Wave function brightness", &params->brightness, 0.0, 5.0))
-           s_sim_params_set(params->BRIGHTNESS, params->brightness);
+    if (ImGui::SliderFloat("particle brightness 1", &params->brightness1, 0.0, 5.0))
+           s_sim_params_set(params->BRIGHTNESS1, params->brightness1);
+    if (ImGui::SliderFloat("particle brightness 2", &params->brightness2, 0.0, 5.0))
+           s_sim_params_set(params->BRIGHTNESS2, params->brightness2);
+    if (ImGui::SliderFloat("brightness 3", &params->brightness3, 0.0, 5.0))
+           s_sim_params_set(params->BRIGHTNESS3, params->brightness3);
     if (ImGui::SliderFloat("V(x, y) brightness", &params->potentialBrightness, 0.0, 1.0))
            s_sim_params_set(params->POTENTIAL_BRIGHTNESS, params->potentialBrightness);
     ImGui::Text("--------------------------------------------------------------------------------");
@@ -99,7 +103,7 @@ void imgui_controls(void *void_params) {
     if (ImGui::SliderFloat("size 2 (expressed as fraction of domain side length)", &params->sigma2, 0.0, 0.1))
            s_sim_params_set(params->SIGMA2, params->sigma2);
     ImGui::Text("--------------------------------------------------------------------------------");
-    if (ImGui::SliderInt("log2(domain side length)", &params->log2TexWidth, 3, 7))
+    if (ImGui::SliderInt("log2(domain side length)", &params->log2TexWidth, 5, 7))
             s_sim_params_set(params->LOG2_TEX_WIDTH, params->log2TexWidth);
     ImGui::Text("Slice coordinate");
     if (ImGui::SliderFloat("sliceCoord[0]", &params->sliceCoord.ind[0], 0.0, 1.0))

@@ -18,7 +18,9 @@ in vec2 UV;
 out vec4 fragColor;
 #endif
 
-uniform sampler2D tex;
+uniform sampler2D reTex;
+uniform sampler2D imTex1;
+uniform sampler2D imTex2;
 uniform ivec4 indices;
 uniform ivec4 texelDimensions4D;
 
@@ -49,8 +51,8 @@ vec4 to4DTextureCoordinates(vec2 textureCoordinate2D) {
 
 void main() {
     vec4 coord4D = to4DTextureCoordinates(UV);
-    fragColor = texture2D(
-        tex,
+    vec4 re = texture2D(
+        reTex,
         to2DTextureCoordinates(
             // coord4D
             vec4(coord4D[indices[0]],
@@ -59,5 +61,27 @@ void main() {
                  coord4D[indices[3]])
         )
     );
+    vec4 im1 = texture2D(
+        imTex1,
+        to2DTextureCoordinates(
+            // coord4D
+            vec4(coord4D[indices[0]],
+                 coord4D[indices[1]],
+                 coord4D[indices[2]],
+                 coord4D[indices[3]])
+        )
+    );
+    vec4 im2 = texture2D(
+        imTex2,
+        to2DTextureCoordinates(
+            // coord4D
+            vec4(coord4D[indices[0]],
+                 coord4D[indices[1]],
+                 coord4D[indices[2]],
+                 coord4D[indices[3]])
+        )
+    );
+    fragColor = vec4(re[0]*re[0] + im1[0]*im2[0]);
+
 }
 

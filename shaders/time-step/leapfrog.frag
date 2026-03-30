@@ -82,19 +82,39 @@ float laplacian2ndOr3Pt1D(sampler2D psiTex, vec4 texCoord4D,
     return (neighbours - 2.0*psiCenter)/spatialStepSize;
 }
 
+float laplacian4thOr5Pt1D(sampler2D psiTex, vec4 texCoord4D,
+                          int dimensionIndex, int channelIndex,
+                          float psiCenter) {
+    float domainLength = dimensions4D[dimensionIndex];
+    float texelLength = float(texelDimensions4D[dimensionIndex]);
+    float texelStepSize = 1.0/texelLength;
+    float spatialStepSize = domainLength/texelLength;
+    vec4 offset = vec4(0.0);
+    offset[dimensionIndex] = texelStepSize;
+    float neighbours 
+        = 4.0*texSample4D(psiTex, texCoord4D, -offset)[channelIndex]/3.0;
+    neighbours 
+        += 4.0*texSample4D(psiTex, texCoord4D, offset)[channelIndex]/3.0;
+    neighbours
+        += -texSample4D(psiTex, texCoord4D, -2.0*offset)[channelIndex]/12.0;
+    neighbours
+        += -texSample4D(psiTex, texCoord4D, 2.0*offset)[channelIndex]/12.0;
+    return (neighbours - (5.0/2.0)*psiCenter)/spatialStepSize;
+}
+
 float hamiltonian(sampler2D psiTex) {
     float potential = texture2D(potentialTex, UV)[0];
     vec4 texCoord4D = to4DTextureCoordinates(UV);
     float psiCenter = texSample4D(psiTex, texCoord4D, vec4(0.0))[0];
     float 
     kinetic = (-hbar*hbar/(2.0*massIndices[0]))
-        * laplacian2ndOr3Pt1D(psiTex, texCoord4D, 0, 0, psiCenter);
+        * laplacian4thOr5Pt1D(psiTex, texCoord4D, 0, 0, psiCenter);
     kinetic += (-hbar*hbar/(2.0*massIndices[1]))
-        * laplacian2ndOr3Pt1D(psiTex, texCoord4D, 1, 0, psiCenter);
+        * laplacian4thOr5Pt1D(psiTex, texCoord4D, 1, 0, psiCenter);
     kinetic += (-hbar*hbar/(2.0*massIndices[2]))
-        * laplacian2ndOr3Pt1D(psiTex, texCoord4D, 2, 0, psiCenter);
+        * laplacian4thOr5Pt1D(psiTex, texCoord4D, 2, 0, psiCenter);
     kinetic += (-hbar*hbar/(2.0*massIndices[3]))
-        * laplacian2ndOr3Pt1D(psiTex, texCoord4D, 3, 0, psiCenter);
+        * laplacian4thOr5Pt1D(psiTex, texCoord4D, 3, 0, psiCenter);
     return kinetic + potential*psiCenter;
 }
 
