@@ -16,7 +16,7 @@ namespace square_reduce4d {
     void reduce(std::vector<Quad> &sum_quads,
             uint32_t scale_program, const Quad &src);
     
-    void reduce(Quad *sum_quads, int size,
+    Quad *reduce(Quad *sum_quads, int min_square_size,
             uint32_t scale_program, const Quad &src);
 
 }

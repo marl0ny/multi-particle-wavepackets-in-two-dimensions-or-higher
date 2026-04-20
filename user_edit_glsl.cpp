@@ -63,6 +63,8 @@ complex absC(complex z) {
 }
 
 complex stepC(complex z) {
+    if (z.x >= -1.0 && z.x <= 1.0)
+        return complex(smoothstep(-1.0, 1.0, z.x), 0.0);
     return complex((z.x > 0.0)? 1.0: 0.0, 0.0);
 }
 
@@ -199,6 +201,7 @@ uniform int outputModeSelect;
 // one for each element of this four vector.
 const int MODE_4VECTOR_REAL_OR_COMPLEX = 0;
 uniform bool useRealPartOfExpression;
+uniform bool is3DContext;
 
 // In this mode, the first two output components
 // represent the real and imaginary parts of the first
@@ -209,14 +212,21 @@ uniform bool useRealPartOfExpression;
 // used for this mode.
 const int MODE_COMPLEX4 = 4;
 
+
 vec4 function(vec2 uv) {
     complex i = IMAG_UNIT;
     complex pi = complex(PI, 0.0);
-    vec3 texUVW = to3DTextureCoordinates(uv) - vec3(0.5);
-    // vec2 texUV = UV - vec2(0.5);
-    complex x = width*texUVW[0];
-    complex y = height*texUVW[1];
-    complex z = depth*texUVW[2];
+    complex x = complex(0.0), y  = complex(0.0), z = complex(0.0);
+    if (is3DContext) {
+        vec3 texUVW = to3DTextureCoordinates(uv) - vec3(0.5);
+        x = width*texUVW[0];
+        y = height*texUVW[1];
+        z = depth*texUVW[2];
+    } else {
+        vec2 texUV = UV - vec2(0.5);
+        x = width*texUV[0];
+        y = height*texUV[1];
+    }
     if (outputModeSelect == MODE_COMPLEX4)
         return vec4(
             (_REPLACEMENT_EXPRESSION_0)[0],

@@ -1,5 +1,6 @@
 #include "gl_wrappers.hpp"
 #include "parameters.hpp"
+#include <cstdint>
 
 #ifndef _SIMULATION_
 #define _SIMULATION_
@@ -22,6 +23,7 @@ struct Frames {
     RenderTarget render_tmp;
     RenderTarget render;
     WireFrame quad_wire_frame;
+    WireFrame surface;
     Frames(const TextureParams &default_tex_params, const SimParams &params);
     void change_simulation_dimensions(const SimParams &params);
 };
@@ -31,8 +33,11 @@ struct Programs {
     uint32_t wave_packet, interaction;
     uint32_t time_step;
     uint32_t transpose_norm_squared, norm_squared, slice;
+    uint32_t surface_mag_color_map; 
+    uint32_t surface_domain_color, surface_single_color;
     uint32_t visualization1, visualization2, perp_lines;
     uint32_t reduce_4x4;
+    uint32_t user_defined;
     Programs();
 };
 
@@ -54,16 +59,24 @@ class Simulation {
     Simulation(
         const TextureParams &default_tex_params, 
         const SimParams &params);
+    void modify_interactive_potential(const SimParams &params);
     void initial_conditions(
         const SimParams &params,
         Vec2 x1, Vec2 x2, Vec2 p1, Vec2 p2);
     void change_simulation_dimensions(const SimParams &params);
+    void add_user_defined_potential(
+        const SimParams &params,
+        unsigned int program,
+        const std::map<std::string, float> &uniforms);
     void step(const SimParams &params);
     const RenderTarget &view(
         const SimParams &params, 
         const std::optional<Vec2> &hover);
     const RenderTarget
-    &view(SimParams &params, ::Quaternion rotation, float scale);
+    &view(
+        const SimParams &params, 
+        const std::optional <Vec2> &hover, 
+        ::Quaternion rotation, float scale);
 };
 
 

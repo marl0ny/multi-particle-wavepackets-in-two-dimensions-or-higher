@@ -19,11 +19,15 @@ out vec4 fragColor;
 
 uniform sampler2D rePsiTex;
 uniform sampler2D imPsiTex;
-uniform sampler2D potentialTex;
+uniform sampler2D intPotentialTex;
+uniform sampler2D extPotentialTex;
 uniform bool isRealStep;
+uniform bool applyAbsorbingBoundaries;
 uniform float hbar;
 uniform vec4 massIndices;
 uniform float dt;
+uniform bool applyClampingToPotential;
+uniform vec2 potentialClampValues;
 
 uniform vec4 dimensions4D;
 uniform ivec4 texelDimensions4D;
@@ -102,9 +106,62 @@ float laplacian4thOr5Pt1D(sampler2D psiTex, vec4 texCoord4D,
     return (neighbours - (5.0/2.0)*psiCenter)/spatialStepSize;
 }
 
-float hamiltonian(sampler2D psiTex) {
-    float potential = texture2D(potentialTex, UV)[0];
+float applyAbsorbing(float psi) {
+    if (applyAbsorbingBoundaries) {
+        vec4 coord = to4DTextureCoordinates(UV);
+        float x = coord[0], y = coord[1], z = coord[2], w = coord[3];
+        float dampFactor = 0.0;
+        float s = 0.02;
+        float a = 0.8;
+        dampFactor += a*exp(-0.5*x*x/(s*s));
+        dampFactor += a*exp(-0.5*(x-1.0)*(x-1.0)/(s*s));
+        dampFactor += a*exp(-0.5*y*y/(s*s));
+        dampFactor += a*exp(-0.5*(y-1.0)*(y-1.0)/(s*s));
+        dampFactor += a*exp(-0.5*z*z/(s*s));
+        dampFactor += a*exp(-0.5*(z-1.0)*(z-1.0)/(s*s));
+        dampFactor += a*exp(-0.5*w*w/(s*s));
+        dampFactor += a*exp(-0.5*(w-1.0)*(w-1.0)/(s*s));
+        dampFactor *= dt;
+        return psi*(1.0 - dampFactor);
+    }
+    return psi;
+}
+
+float zeroPotentialIfInsideAbsorbingBoundaries(float potential) {
     vec4 texCoord4D = to4DTextureCoordinates(UV);
+    float s = 0.02;
+    if (applyAbsorbingBoundaries &&
+        (texCoord4D[0] <= 1.0*s || texCoord4D[0] > (1.0 - 1.0*s) || 
+         texCoord4D[1] <= 1.0*s || texCoord4D[1] > (1.0 - 1.0*s) ||
+         texCoord4D[2] <= 1.0*s || texCoord4D[2] > (1.0 - 1.0*s) ||
+         texCoord4D[3] <= 1.0*s || texCoord4D[3] > (1.0 - 1.0*s)))
+        potential = 0.0;
+    return potential;
+}
+
+float getExternalPotential(sampler2D extPotentialTex, vec4 texCoord4D) {
+    return texture2D(extPotentialTex, texCoord4D.xz)[0]
+        + texture2D(extPotentialTex, texCoord4D.yw)[0];
+}
+
+float clampPotential(float potential, float minVal, float maxVal) {
+    if (maxVal == minVal)
+        return minVal;
+    if (potential > maxVal)
+        return maxVal;
+    else if (potential <= minVal)
+        return minVal;
+    return potential;
+}
+
+float hamiltonian(sampler2D psiTex) {
+    vec4 texCoord4D = to4DTextureCoordinates(UV);
+    float potential = zeroPotentialIfInsideAbsorbingBoundaries(
+        texture2D(intPotentialTex, UV)[0] 
+        + getExternalPotential(extPotentialTex, texCoord4D));
+    if (applyClampingToPotential)
+        potential = clampPotential(
+            potential, potentialClampValues[0], potentialClampValues[1]);
     float psiCenter = texSample4D(psiTex, texCoord4D, vec4(0.0))[0];
     float 
     kinetic = (-hbar*hbar/(2.0*massIndices[0]))
@@ -120,13 +177,13 @@ float hamiltonian(sampler2D psiTex) {
 
 float getNextRealPsi() {
     float rePsiPrev = texture2D(rePsiTex, UV)[0];
-    return rePsiPrev + dt*hamiltonian(imPsiTex);
+    return applyAbsorbing(rePsiPrev) + dt*hamiltonian(imPsiTex);
 
 }
 
 float getNextImagPsi() {
     float imPsiPrev = texture2D(imPsiTex, UV)[0];
-    return imPsiPrev - dt*hamiltonian(rePsiTex);
+    return applyAbsorbing(imPsiPrev) - dt*hamiltonian(rePsiTex);
 }
 
 void main() {

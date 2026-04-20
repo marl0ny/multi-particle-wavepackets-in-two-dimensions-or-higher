@@ -1,6 +1,8 @@
 #include "gl_wrappers.hpp"
 #include "reduce4d.hpp"
 
+// #include <iostream>
+
 void square_reduce4d::initialize_sum_quads(
     std::vector<Quad> &sum_quads, TextureParams params, 
     int max_dim, int min_dim) {
@@ -41,12 +43,13 @@ void square_reduce4d::reduce(std::vector<Quad> &sum_quads,
     }
 }
 
-void square_reduce4d::reduce(Quad *sum_quads, int size,
+Quad *square_reduce4d::reduce(Quad *sum_quads, int min_square_size,
             uint32_t scale_program, const Quad &src) {
     int i = 0;
+    // std::cout << "Reduction size: " << size << std::endl;
     while (sum_quads[i].width() > src.width()/2) 
         i++;
-    for (int j = i; j < size; j++) {
+    for (int j = i; sum_quads[j].width() >= min_square_size; j++) {
         IVec2 tex_dimensions2d {
             .x=(int)((j == i)? sum_quads[j-1].width(): src.width()),
             .y=(int)((j == i)? sum_quads[j-1].height(): src.height())
@@ -58,5 +61,7 @@ void square_reduce4d::reduce(Quad *sum_quads, int size,
                 {"texDimensions2D", tex_dimensions2d},
                 {"tex", {(j == i)? &src: &sum_quads[j-1]}}
             });
+        if (sum_quads[j].width() == min_square_size)
+            return &sum_quads[j];
     }
 }

@@ -23,14 +23,20 @@ out vec4 fragColor;
 
 uniform sampler2D prob1Tex;
 uniform sampler2D prob2Tex;
+uniform sampler2D potTex;
 uniform sampler2D prevExternalVisTex;
+uniform vec3 color1;
+uniform vec3 color2;
 uniform float waveFunctionBrightness1;
 uniform float waveFunctionBrightness2;
 uniform float potentialBrightness;
 
 void main() {
-    float p1 = 0.00025*waveFunctionBrightness1*texture2D(prob1Tex, UV)[0];
-    float p2 = 0.00025*waveFunctionBrightness2*texture2D(prob2Tex, UV)[0];
+    float p1 = waveFunctionBrightness2*texture2D(prob1Tex, UV)[0];
+    float p2 = waveFunctionBrightness1*texture2D(prob2Tex, UV)[0];
+    float potentialVal = potentialBrightness*texture2D(potTex, UV)[0];
+    vec3 c1 = p1*color1;
+    vec3 c2 = p2*color2;
     vec4 previousExternalVis = texture2D(prevExternalVisTex, UV);
-    fragColor = vec4(vec3(p1, 0.0, p2) + previousExternalVis.rgb, 1.0);
+    fragColor = vec4(potentialVal + c1 + c2 + previousExternalVis.rgb, 1.0);
 }

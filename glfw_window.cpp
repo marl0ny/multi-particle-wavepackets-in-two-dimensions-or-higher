@@ -8,7 +8,7 @@ static GLFWwindow *init_window(int width, int height) {
 	fprintf(stderr, "GLFW error %d\n", glfwGetError(NULL));
         fprintf(stderr, "Unable to create glfw window.\n");
         exit(1);
-        #endif 
+        #endif
     }
     #ifdef __EMSCRIPTEN__
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

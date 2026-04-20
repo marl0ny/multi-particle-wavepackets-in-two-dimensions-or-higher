@@ -1,15 +1,5 @@
-/* Visualization of the wave function using domain coloring and
-potential using a grayscale.
-
-References:
-
-Wikipedia - Domain coloring
-https://en.wikipedia.org/wiki/Domain_coloring
-
-Wikipedia - Hue
-https://en.wikipedia.org/wiki/Hue
-
-https://en.wikipedia.org/wiki/Hue#/media/File:HSV-RGB-comparison.svg
+/* Interpret the first two channels of a texel as complex value
+and convert it to a colour
 
 */
 #if (__VERSION__ >= 330) || (defined(GL_ES) && __VERSION__ >= 300)
@@ -24,9 +14,13 @@ precision highp float;
     
 #if __VERSION__ <= 120
 varying vec2 UV;
+varying vec3 NORMAL;
+varying vec3 FINAL_VERTEX_POSITION;
 #define fragColor gl_FragColor
 #else
 in vec2 UV;
+in vec3 NORMAL;
+in vec3 FINAL_VERTEX_POSITION;
 out vec4 fragColor;
 #endif
 
@@ -34,12 +28,8 @@ out vec4 fragColor;
 
 #define PI 3.141592653589793
 
-uniform sampler2D reTex;
-uniform sampler2D imTex1;
-uniform sampler2D imTex2;
-// uniform sampler2D potentialTex;
-uniform float waveFunctionBrightness;
-uniform float potentialBrightness;
+uniform sampler2D tex;
+uniform float brightness;
 uniform float phaseAdjust;
 
 complex mul(complex w, complex z) {
@@ -76,14 +66,19 @@ vec3 argumentToColor(float argVal) {
 }
 
 void main() {
-    float re = texture2D(reTex, UV)[0];
-    float im = (texture2D(imTex1, UV)[0] + texture2D(imTex2, UV)[0])/2.0;
-    float absVal2 = re*re + texture2D(imTex1, UV)[0]*texture2D(imTex2, UV)[0];
-    complex z1 = complex(re, im);
+    if (abs(FINAL_VERTEX_POSITION.x) > 2.0 || abs(FINAL_VERTEX_POSITION.y) > 2.0 ||
+        abs(FINAL_VERTEX_POSITION.z) > 2.0)
+        discard;
+    complex z1 = texture2D(tex, UV).xy;
     complex phaseFactor = complex(cos(phaseAdjust), sin(phaseAdjust));
     complex z2 = mul(phaseFactor, z1);
-    vec3 color = waveFunctionBrightness
-        *sqrt(absVal2)*argumentToColor(atan(z2.y, z2.x));
-    // float potential = texture2D(potentialTex, UV)[0];
+    float ambient = 0.01;
+    // float diffuse = abs(dot(NORMAL, vec3(0.0, 0.0, -1.0)));
+    float brightness2 = brightness*length(z2);
+    vec3 color = ambient 
+        + (
+            1.0 // + diffuse
+        )*brightness2*argumentToColor(atan(z2.y, z2.x));
+    // fragColor = vec4(color, min(1.0, 10.0*brightness2));
     fragColor = vec4(color, 1.0);
 }
