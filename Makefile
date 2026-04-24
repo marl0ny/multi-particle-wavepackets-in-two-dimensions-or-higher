@@ -1,8 +1,8 @@
-CPP_SOURCES = matrix.cpp surface.cpp parse.cpp \
+CPP_SOURCES = matrix.cpp multi_surface.cpp surface.cpp parse.cpp \
 	user_edit_glsl.cpp reduce4d.cpp simulation.cpp \
 	main.cpp \
 	interactor.cpp gl_wrappers.cpp glfw_window.cpp
-OBJECTS = matrix.o surface.o parse.o \
+OBJECTS = matrix.o multi_surface.o surface.o parse.o \
 	user_edit_glsl.o reduce4d.o simulation.o \
 	main.o \
 	interactor.o gl_wrappers.o glfw_window.o

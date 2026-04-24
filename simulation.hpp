@@ -35,6 +35,7 @@ struct Programs {
     uint32_t transpose_norm_squared, norm_squared, slice;
     uint32_t surface_mag_color_map; 
     uint32_t surface_domain_color, surface_single_color;
+    uint32_t four_surfaces;
     uint32_t visualization1, visualization2, perp_lines;
     uint32_t reduce_4x4;
     uint32_t user_defined;

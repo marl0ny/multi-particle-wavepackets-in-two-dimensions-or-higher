@@ -1,4 +1,5 @@
 #include "simulation.hpp"
+#include "multi_surface.hpp"
 #include "reduce4d.hpp"
 #include "surface.hpp"
 #include "matrix.hpp"
@@ -237,8 +238,12 @@ Frames::Frames(
     render_tmp(RenderTarget{view_params}),
     render(RenderTarget{view_params}),
     quad_wire_frame(get_quad_wire_frame()),
-    surface(
+    /* surface(
         get_surface_wireframe({.ind{512, 512}})
+    ),*/
+    surface(
+        multi_surface::get_wireframe(
+            {.ind{512, 512}}, 4)
     )
     {
     int max_allowed_texture_size;
@@ -338,6 +343,9 @@ Programs::Programs() {
         "./shaders/surface/surface.vert", 
         "./shaders/surface/single-color.frag"
     );
+    this->four_surfaces = make_program_from_paths(
+        "./shaders/surface/four-surfaces.vert",
+        "./shaders/surface/four-surfaces.frag");
     this->visualization1 = Quad::make_program_from_path(
         "./shaders/visualization/d-color-wfn-gscale-pot.frag"
     );
@@ -684,11 +692,55 @@ void Simulation::entire_wave_func_view(const SimParams &params) {
     );
 }
 
+enum class SurfaceOrdering {
+    Y_ASCENDING, Y_DESCENDING, X_ASCENDING, X_DESCENDING  
+};
+
+static SurfaceOrdering get_ordering(::Quaternion rotation) {
+    Quaternion x_basis {.i=1.0, .j=0.0, .k=0.0, .real=0.0};
+    Quaternion y_basis {.i=0.0, .j=1.0, .k=0.0, .real=0.0};
+    x_basis = ::rotate(x_basis, rotation);
+    y_basis = ::rotate(y_basis, rotation);
+    Vec3 x_vec = Vec3{.x=x_basis.i, x_basis.j, x_basis.k};
+    Vec3 y_vec = Vec3{.x=y_basis.i, y_basis.j, y_basis.k};
+    Vec3 camera_vec = Vec3{.x=0.0, 0.0, 1.0};
+    float dot_val1 = ::dot(x_vec, camera_vec);
+    float dot_val2 = ::dot(y_vec, camera_vec);
+    if (abs(dot_val1) > abs(dot_val2))
+        return (dot_val1 < 0)? 
+            SurfaceOrdering::X_ASCENDING: 
+            SurfaceOrdering::X_DESCENDING;
+    else 
+        return (dot_val2 < 0)?
+            SurfaceOrdering::Y_ASCENDING:
+            SurfaceOrdering::Y_DESCENDING;
+
+}
+
 const RenderTarget &Simulation::view(
     const SimParams &params, const std::optional<Vec2> &hover,
     ::Quaternion rotation, float scale
 ) {
     if (params.show3D) {
+        int ordering;
+        switch(get_ordering(rotation)) {
+            case SurfaceOrdering::X_ASCENDING:
+            ordering = 2;
+            std::cout << "x ascending\n";
+            break;
+            case SurfaceOrdering::X_DESCENDING:
+            ordering = -2;
+            std::cout << "x descending\n";
+            break;
+            case SurfaceOrdering::Y_ASCENDING:
+            ordering = 1;
+            std::cout << "y ascending\n";
+            break;
+            case SurfaceOrdering::Y_DESCENDING:
+            ordering = -1;
+            std::cout << "y descending\n";
+            break;
+        }
         m_frames.render.clear();
         particle1_prob_view(this->m_frames.slices[0], params);
         particle2_prob_view(this->m_frames.slices[1], params);
@@ -697,9 +749,85 @@ const RenderTarget &Simulation::view(
             (int)m_frames.view_params.height
         }};
         glEnable(GL_DEPTH_TEST);
+        // TODO: check the next line
+        glDepthFunc(GL_LESS);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        const int REAL_DATA_TYPE = 0;
+        // const int COMPLEX_DATA_TYPE = 1;
+        Uniforms vertex_uniforms = {
+            {"heightTex1", &this->m_frames.slices[0]},
+            {"heightDataType1", REAL_DATA_TYPE},
+            {"heightScale1", 
+                params.height1
+                / (float(pow(2.0, 2.0*params.log2TexWidth))*120)},
+            {"heightOffset1", 
+                0.015F*(float(pow(2.0, 2.0*params.log2TexWidth))*120)
+                 / (params.height1)
+            },
+            {"heightTex2", &this->m_frames.slices[1]},
+            {"heightDataType2", REAL_DATA_TYPE},
+            {"heightScale2", 
+                params.height1
+                / (float(pow(2.0, 2.0*params.log2TexWidth))*120)},
+            {"heightOffset2",
+                0.01F*(float(pow(2.0, 2.0*params.log2TexWidth))*120)
+                / (params.height1)
+            },
+            {"heightTex3", &m_frames.potential_slice},
+            {"heightDataType3", REAL_DATA_TYPE},
+            {"heightScale3", params.potentialHeight/10.0F},
+            {"heightTex4", &m_frames.potential_slice},
+            {"heightDataType4", REAL_DATA_TYPE},
+            {"heightScale4", params.potentialHeight/10.0F},
+            {"scale", scale},
+            {"rotation", rotation},
+            {"screenDimensions", screen_dimensions},
+            {"translate", Vec3{.ind{0.0, 0.0, 0.0}}},
+            {"dimensions2D", IVec2{.ind{512, 512}}},
+            {"ordering", int(ordering)}
+        };
+        const int SINGLE_VALUE = 0;
+        const int SCALAR_MAG = 1;
+        Uniforms fragment_uniforms = {
+            {"tex1", &m_frames.slices[0]},
+            {"drawType1", int(SCALAR_MAG)},
+            {"brightness1", params.brightness2
+                    / float(pow(2.0, 2.0*params.log2TexWidth))},
+            {"color1", Vec4{.r=1.0, .g=0.0, .b=0.0, 
+                                .a=params.transparency2}},
+            {"tex2", &m_frames.slices[1]},
+            {"drawType2", int(SCALAR_MAG)},
+            {"brightness2", params.brightness1
+                    / float(pow(2.0, 2.0*params.log2TexWidth))},
+            {"color2", Vec4{.r=0.0, .g=0.0, .b=1.0,
+                            .a=params.transparency1}},
+            {"tex3", &m_frames.potential_slice},
+            {"drawType3", int(SINGLE_VALUE)},
+            {"brightness3", params.potentialBrightness},
+            {"color3", Vec4{.r=1.0, .g=1.0, .b=1.0, .a=0.1}},
+            {"tex4", &m_frames.potential_slice},
+            {"drawType4", int(SINGLE_VALUE)},
+            {"brightness4", params.potentialBrightness},
+            {"color4", Vec4{.r=1.0, .g=1.0, .b=1.0, .a=0.0}},
+        };
+        Uniforms uniforms {};
+        for (auto &e: vertex_uniforms)
+            uniforms.insert(e);
+        for (auto &e: fragment_uniforms)
+            uniforms.insert(e);
+        m_frames.render.draw(
+            m_programs.four_surfaces,
+            uniforms,
+            m_frames.surface,
+            Config::viewport(
+                0, 0, 
+                m_frames.view_params.width, 
+                m_frames.view_params.height)
+        );
         // uint32_t program = (params.colorPhase)? 
         //     m_programs.surface_domain_color: m_programs.surface_mag_color_map;
-        uint32_t program = m_programs.surface_mag_color_map;
+        /* uint32_t program = m_programs.surface_mag_color_map;
         Uniforms vertex_uniforms1 = {
             {"heightTex", &m_frames.slices[0]},
             {"rotation", rotation},
@@ -842,7 +970,8 @@ const RenderTarget &Simulation::view(
                         m_frames.view_params.height)
                 );
             }
-        }
+        }*/
+        glDisable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         return m_frames.render;

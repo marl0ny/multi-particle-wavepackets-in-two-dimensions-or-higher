@@ -25,7 +25,7 @@ struct LineDivider {};
 struct NotUsed {};
 
 struct SimParams {
-    int stepsPerFrame = (int)(1);
+    int stepsPerFrame = (int)(0);
     float brightness1 = (float)(0.1F);
     float brightness2 = (float)(0.1F);
     float brightness3 = (float)(0.1F);
@@ -50,7 +50,7 @@ struct SimParams {
     Button enterWaveFunc = Button{};
     LineDivider lineDiv2 = LineDivider{};
     int maxLog2TexWidth = (int)(7);
-    int log2TexWidth = (int)(6);
+    int log2TexWidth = (int)(5);
     IVec2 sliceInd = (IVec2)(IVec2 {.ind={1, 3}});
     IVec2 sampleInd = (IVec2)(IVec2 {.ind={0, 2}});
     float dt = (float)(0.06F);
@@ -59,11 +59,13 @@ struct SimParams {
     SelectionList presetPotentialDropdown = SelectionList{0, {"0", "amp*((x/width)^2 + (y/height)^2)", "3.8*(step(-y^2+(height*0.04*s1)^2)+step(y^2-(height*0.06*s2)^2))*step(-x^2+(width*0.04*w)^2)", "1.0/sqrt(x^2+y^2)+1.0/sqrt((x-0.25*width)^2+(y-0.25*height)^2)", "0.5*(x*cos(w*t/200)/width + y*sin(w*t/200)/height)", "0.5*(tanh(75.0*(((x/width)^2+(y/height)^2)^0.5-0.45))+1.0)"}};
     EntryBoxes userTextEntry = EntryBoxes{"0"};
     LineDivider lineDiv3 = LineDivider{};
-    bool show3D = (bool)(false);
+    bool show3D = (bool)(true);
     float height1 = (float)(1.0F);
-    float height2 = (float)(1.0F);
+    float transparency1 = (float)(0.4F);
+    float transparency2 = (float)(0.4F);
     float height3 = (float)(1.0F);
     float potentialHeight = (float)(1.0F);
+    Label viewOrientation = Label{};
     enum {
         STEPS_PER_FRAME=0,
         BRIGHTNESS1=1,
@@ -101,9 +103,11 @@ struct SimParams {
         LINE_DIV3=33,
         SHOW3_D=34,
         HEIGHT1=35,
-        HEIGHT2=36,
-        HEIGHT3=37,
-        POTENTIAL_HEIGHT=38,
+        TRANSPARENCY1=36,
+        TRANSPARENCY2=37,
+        HEIGHT3=38,
+        POTENTIAL_HEIGHT=39,
+        VIEW_ORIENTATION=40,
     };
     void set(int enum_val, Uniform val) {
         switch(enum_val) {
@@ -188,8 +192,11 @@ struct SimParams {
             case HEIGHT1:
             height1 = val.f32;
             break;
-            case HEIGHT2:
-            height2 = val.f32;
+            case TRANSPARENCY1:
+            transparency1 = val.f32;
+            break;
+            case TRANSPARENCY2:
+            transparency2 = val.f32;
             break;
             case HEIGHT3:
             height3 = val.f32;
@@ -255,8 +262,10 @@ struct SimParams {
             return {(bool)show3D};
             case HEIGHT1:
             return {(float)height1};
-            case HEIGHT2:
-            return {(float)height2};
+            case TRANSPARENCY1:
+            return {(float)transparency1};
+            case TRANSPARENCY2:
+            return {(float)transparency2};
             case HEIGHT3:
             return {(float)height3};
             case POTENTIAL_HEIGHT:
@@ -271,6 +280,9 @@ struct SimParams {
             break;
             case USER_TEXT_ENTRY:
             userTextEntry[index] = val;
+            break;
+            case VIEW_ORIENTATION:
+            viewOrientation = val;
             break;
         }
     }

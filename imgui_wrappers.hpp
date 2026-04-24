@@ -152,14 +152,17 @@ void imgui_controls(void *void_params) {
     }
     ImGui::Text("--------------------------------------------------------------------------------");
     ImGui::Checkbox("Show 3D surface height views", &params->show3D);
-    if (ImGui::SliderFloat("particle 1 prob. density height", &params->height1, 0.0, 10.0))
+    if (ImGui::SliderFloat("particle prob. density height", &params->height1, 0.1, 10.0))
            s_sim_params_set(params->HEIGHT1, params->height1);
-    if (ImGui::SliderFloat("particle 2 prob. density height", &params->height2, 0.0, 10.0))
-           s_sim_params_set(params->HEIGHT2, params->height2);
+    if (ImGui::SliderFloat("transparency", &params->transparency1, 0.1, 1.0))
+           s_sim_params_set(params->TRANSPARENCY1, params->transparency1);
+    if (ImGui::SliderFloat("transparency (transparency2)", &params->transparency2, 0.1, 1.0))
+           s_sim_params_set(params->TRANSPARENCY2, params->transparency2);
     if (ImGui::SliderFloat("Wave function slice height 3", &params->height3, 0.0, 10.0))
            s_sim_params_set(params->HEIGHT3, params->height3);
     if (ImGui::SliderFloat("Potential height", &params->potentialHeight, 0.0, 10.0))
            s_sim_params_set(params->POTENTIAL_HEIGHT, params->potentialHeight);
+    ImGui::Text("Orientation: ");
 
 }
 

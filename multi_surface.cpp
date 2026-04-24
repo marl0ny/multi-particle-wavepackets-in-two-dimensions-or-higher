@@ -1,42 +1,109 @@
-#include "surface.hpp"
+#include "multi_surface.hpp"
 
-static std::vector<float> get_vertices_set_elements(
-    IVec2 d_2d, std::vector<int> &elements) {
-    int width = d_2d[0], height = d_2d[1];
-    std::vector<float> vertices {};
+struct Vertex {
+    float surface_ind;
+    float x, y;
+    float sort_val;
+};
+
+struct Element {
+    int v1, v2, v3;
+};
+
+WireFrame multi_surface::get_wireframe(IVec2 d_2d, int number_of_surfaces) {
+    int width = d_2d[0];
+    int height = d_2d[1];
+    std::vector <float> vertices {};
+    std::vector <int> elements {};
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            std::vector<float> vertex {};
-            vertex.push_back(((float)i + 0.5)/float(width));
-            vertex.push_back(((float)j + 0.5)/float(height));
-	    vertex.push_back(0.0);
-	    vertex.push_back(0.0);
-            for (float e: vertex)
-                vertices.push_back(e);
-            if (i < (width - 1) && j < (height - 1)) {
-                std::vector<int> triangle1 {
-                    j + i*width, j + 1 + i*width, j + 1 + (i + 1)*width
+            for (int k = 0; k < number_of_surfaces; k++) {
+                Vertex vertex {
+                    .surface_ind=float(k),
+                    .x=((float)j + 0.5F)/float(width),
+                    .y=((float)i + 0.5F)/float(height),
+                    .sort_val=((float)j + 0.5F)/float(height)
                 };
-                std::vector<int> triangle2 {
-                    j + 1 + (i + 1)*width, j + (i + 1)*width, j + i*width
-                };
-                for (int e: triangle1)
-                    elements.push_back(e);
-                for (int e: triangle2)
-                    elements.push_back(e);
+                vertices.push_back(vertex.surface_ind);
+                vertices.push_back(vertex.x);
+                vertices.push_back(vertex.y);
+                vertices.push_back(vertex.sort_val);
+                if (i < (width - 1) && j < (height - 1)) {
+                    Element triangle1 {
+                        .v1=number_of_surfaces*(j + i*width) + k,
+                        .v2=number_of_surfaces*((j + 1) + i*width) + k,
+                        .v3=number_of_surfaces*((j + 1) + (i + 1)*width) + k
+                    };
+                    Element triangle2 {
+                        .v1=number_of_surfaces*((j + 1) + (i + 1)*width) + k,
+                        .v2=number_of_surfaces*(j + (i + 1)*width) + k,
+                        .v3=number_of_surfaces*(j + i*width) + k,
+                    };
+                    elements.push_back(triangle1.v1);
+                    elements.push_back(triangle1.v2);
+                    elements.push_back(triangle1.v3);
+                    elements.push_back(triangle2.v1);
+                    elements.push_back(triangle2.v2);
+                    elements.push_back(triangle2.v3);
+                }
             }
         }
     }
-    return vertices;
-}
-
-static WireFrame get_surface_wireframe(IVec2 d_2d) {
     Attributes attributes = {
         {"position", {
             .size=4, .type=GL_FLOAT, .normalized=false, .stride=0, .offset=0
         }}
     };
-    std::vector<int> elements {};
-    std::vector<float> vertices = get_vertices_set_elements(d_2d, elements);
+    return WireFrame(attributes, vertices, elements, WireFrame::TRIANGLES);
+}
+
+multi_surface::
+MultiSurface::
+MultiSurface
+(IVec2 d_2d, int number_of_surfaces): d_2d(d_2d) {
+    int width = d_2d[0];
+    int height = d_2d[1];
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            for (int k = 0; k < number_of_surfaces; k++) {
+                Vertex vertex {
+                    .surface_ind=float(k),
+                    .x=((float)j + 0.5F)/float(width),
+                    .y=((float)i + 0.5F)/float(height),
+                    .sort_val=((float)j + 0.5F)/float(height)
+                };
+                this->vertices.push_back(vertex.surface_ind);
+                this->vertices.push_back(vertex.x);
+                this->vertices.push_back(vertex.y);
+                this->vertices.push_back(vertex.sort_val);
+                if (i < (width - 1) && j < (height - 1)) {
+                    Element triangle1 {
+                        .v1=number_of_surfaces*(j + i*width) + k,
+                        .v2=number_of_surfaces*((j + 1) + i*width) + k,
+                        .v3=number_of_surfaces*((j + 1) + (i + 1)*width) + k
+                    };
+                    Element triangle2 {
+                        .v1=number_of_surfaces*((j + 1) + (i + 1)*width) + k,
+                        .v2=number_of_surfaces*(j + (i + 1)*width) + k,
+                        .v3=number_of_surfaces*(j + i*width) + k,
+                    };
+                    this->elements.push_back(triangle1.v1);
+                    this->elements.push_back(triangle1.v2);
+                    this->elements.push_back(triangle1.v3);
+                    this->elements.push_back(triangle2.v1);
+                    this->elements.push_back(triangle2.v2);
+                    this->elements.push_back(triangle2.v3);
+                }
+            }
+        }
+    }
+}
+
+WireFrame multi_surface::MultiSurface::get_wire_frame() const {
+    Attributes attributes = {
+        {"position", {
+            .size=4, .type=GL_FLOAT, .normalized=false, .stride=0, .offset=0
+        }}
+    };
     return WireFrame(attributes, vertices, elements, WireFrame::TRIANGLES);
 }
