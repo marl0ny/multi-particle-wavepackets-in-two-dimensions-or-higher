@@ -41,6 +41,7 @@ uniform sampler2D imTex2;
 uniform float waveFunctionBrightness;
 uniform float potentialBrightness;
 uniform float phaseAdjust;
+uniform float alpha;
 
 complex mul(complex w, complex z) {
     return complex(w.x*z.x - w.y*z.y, w.x*z.y + w.y*z.x);
@@ -85,5 +86,5 @@ void main() {
     vec3 color = waveFunctionBrightness
         *sqrt(absVal2)*argumentToColor(atan(z2.y, z2.x));
     // float potential = texture2D(potentialTex, UV)[0];
-    fragColor = vec4(color, 1.0);
+    fragColor = vec4(color, alpha);
 }

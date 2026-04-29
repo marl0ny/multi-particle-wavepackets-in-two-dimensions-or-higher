@@ -57,6 +57,7 @@ uniform vec3 translate;
 uniform ivec2 dimensions2D;
 const int REAL_DATA_TYPE = 0;
 const int COMPLEX_DATA_TYPE = 1;
+const int COMPLEX_ABS_DATA_TYPE = 2;
 
 uniform int ordering;
 const int Y_ASCENDING = 1;
@@ -116,8 +117,10 @@ vec3 getNormal(vec2 xy, sampler2D heightTex, float heightScale) {
 float getHeight(sampler2D heightTex, int heightDataType) {
     float height = texture2D(heightTex, UV)[0];
     if (heightDataType == COMPLEX_DATA_TYPE) {
-        complex z = texture2D(heightTex1, UV).xy;
+        complex z = texture2D(heightTex, UV).xy;
         height = z.x*z.x + z.y*z.y;
+    } else if (heightDataType == COMPLEX_ABS_DATA_TYPE) {
+        height = texture2D(heightTex, UV).z;
     }
     return height;
 }

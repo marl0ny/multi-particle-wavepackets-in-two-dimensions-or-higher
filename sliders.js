@@ -38,8 +38,8 @@ const ENUM_CODES = {
     TRANSPARENCY1: 36,
     TRANSPARENCY2: 37,
     HEIGHT3: 38,
-    POTENTIAL_HEIGHT: 39,
-    VIEW_ORIENTATION: 40,
+    TRANSPARENCY3: 39,
+    POTENTIAL_HEIGHT: 40,
 };
 
 function createScalarParameterSlider(
@@ -409,11 +409,11 @@ createScalarParameterSlider(controls, 28, "Time step", "float", {'value': 0.06, 
 createSelectionList(controls, 31, 0, "Preset V(x, y, t)", [ "0",  "amp*((x/width)^2 + (y/height)^2)",  "3.8*(step(-y^2+(height*0.04*s1)^2)+step(y^2-(height*0.06*s2)^2))*step(-x^2+(width*0.04*w)^2)",  "1.0/sqrt(x^2+y^2)+1.0/sqrt((x-0.25*width)^2+(y-0.25*height)^2)",  "0.5*(x*cos(w*t/200)/width + y*sin(w*t/200)/height)",  "0.5*(tanh(75.0*(((x/width)^2+(y/height)^2)^0.5-0.45))+1.0)"]);
 createEntryBoxes(controls, 32, "Enter potential V(x, y, t) (value clampled to prevent instability)", 1, []);
 createLineDivider(controls);
-createCheckbox(controls, 34, "Show 3D surface height views", true);
+createCheckbox(controls, 34, "Show 3D surface height views", false);
 createScalarParameterSlider(controls, 35, "particle prob. density height", "float", {'value': 1.0, 'min': 0.1, 'max': 10.0, 'step': 0.1});
-createScalarParameterSlider(controls, 36, "transparency", "float", {'value': 0.4, 'min': 0.1, 'max': 1.0, 'step': 0.01});
-createScalarParameterSlider(controls, 37, "transparency", "float", {'value': 0.4, 'min': 0.1, 'max': 1.0, 'step': 0.01});
-createScalarParameterSlider(controls, 38, "Wave function slice height 3", "float", {'value': 1.0, 'min': 0.0, 'max': 10.0, 'step': 0.1});
-createScalarParameterSlider(controls, 39, "Potential height", "float", {'value': 1.0, 'min': 0.0, 'max': 10.0, 'step': 0.1});
-createLabel(controls, 40, "Orientation: ", "");
+createScalarParameterSlider(controls, 36, "transparency 1", "float", {'value': 0.75, 'min': 0.05, 'max': 1.0, 'step': 0.01});
+createScalarParameterSlider(controls, 37, "transparency 2", "float", {'value': 0.25, 'min': 0.05, 'max': 1.0, 'step': 0.01});
+createScalarParameterSlider(controls, 38, "Wave function slice height", "float", {'value': 0.25, 'min': 0.05, 'max': 10.0, 'step': 0.1});
+createScalarParameterSlider(controls, 39, "Wave function slice transparency", "float", {'value': 1.0, 'min': 0.05, 'max': 1.0, 'step': 0.01});
+createScalarParameterSlider(controls, 40, "Potential height", "float", {'value': 1.0, 'min': 0.0, 'max': 10.0, 'step': 0.1});
 

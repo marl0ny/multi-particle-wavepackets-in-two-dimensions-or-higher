@@ -26,8 +26,13 @@ out vec4 fragColor;
 
 #define complex vec2
 
+#define PI 3.141592653589793
+
 const int SINGLE_VALUE = 0;
 const int SCALAR_MAG = 1;
+const int COPY_OVER = 2;
+const int DOMAIN_COLOR_COMPLEX = 3;
+const int DOMAIN_COLOR_COMPLEX_ABS_VAL = 4;
 
 uniform sampler2D tex1;
 uniform int drawType1;
@@ -67,12 +72,60 @@ vec4 getMagColorFragmentColor(sampler2D tex, float brightness, vec4 color) {
     return vec4(actColor, color.a);
 }
 
+
+complex mul(complex w, complex z) {
+    return complex(w.x*z.x - w.y*z.y, w.x*z.y + w.y*z.x);
+}
+
+vec3 argumentToColor(float argVal) {
+    float maxCol = 1.0;
+    float minCol = 50.0/255.0;
+    float colRange = maxCol - minCol;
+    if (argVal <= PI/3.0 && argVal >= 0.0) {
+        return vec3(maxCol,
+                    minCol + colRange*argVal/(PI/3.0), minCol);
+    } else if (argVal > PI/3.0 && argVal <= 2.0*PI/3.0){
+        return vec3(maxCol - colRange*(argVal - PI/3.0)/(PI/3.0),
+                    maxCol, minCol);
+    } else if (argVal > 2.0*PI/3.0 && argVal <= PI){
+        return vec3(minCol, maxCol,
+                    minCol + colRange*(argVal - 2.0*PI/3.0)/(PI/3.0));
+    } else if (argVal < 0.0 && argVal > -PI/3.0){
+        return vec3(maxCol, minCol,
+                    minCol - colRange*argVal/(PI/3.0));
+    } else if (argVal <= -PI/3.0 && argVal > -2.0*PI/3.0){
+        return vec3(maxCol + (colRange*(argVal + PI/3.0)/(PI/3.0)),
+                    minCol, maxCol);
+    } else if (argVal <= -2.0*PI/3.0 && argVal >= -PI){
+        return vec3(minCol,
+                    minCol - (colRange*(argVal + 2.0*PI/3.0)/(PI/3.0)), 
+                    maxCol);
+    }
+    else {
+        return vec3(minCol, maxCol, maxCol);
+    }
+}
+
+vec4 getComplexWithAbsValFragmentColor(
+    sampler2D tex, float brightness, float alpha) {
+    float re = texture2D(tex, UV)[0];
+    float im = texture2D(tex, UV)[1];
+    float absVal = texture2D(tex, UV)[2];
+    complex z = complex(re, im);
+    vec3 color = brightness*absVal*argumentToColor(atan(z.y, z.x));
+    return vec4(color, alpha);
+}
+
 vec4 getFragmentColor(
     sampler2D tex, int drawType, float brightness, vec4 color) {
     if (drawType == SINGLE_VALUE) {
         return getSingleColorFragmentColor(color);
     } else if (drawType == SCALAR_MAG) {
         return getMagColorFragmentColor(tex, brightness, color);
+    } else if (drawType == COPY_OVER) {
+        return texture2D(tex, UV);
+    } else if (drawType == DOMAIN_COLOR_COMPLEX_ABS_VAL) {
+        return getComplexWithAbsValFragmentColor(tex, brightness, color.a);
     }
     return getMagColorFragmentColor(tex, brightness, color);
 }

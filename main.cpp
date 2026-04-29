@@ -27,6 +27,8 @@ static void s_main_loop() {
 
 using namespace sim_2d;
 
+static const double PI = 3.141592653589793;
+
 static unsigned int power2(unsigned int pow) {
     if (pow == 0)
         return 1;
@@ -64,7 +66,8 @@ void simulation_ui_interface_handler(
     std::vector<Vec2> cursor_positions {};
     std::optional<std::pair<Vec2, Vec2>> start_double_touches;
     std::vector<std::pair<Vec2, Vec2>> double_touches_positions {};
-    Quaternion rotation = Quaternion::rotator(0.25, Vec3{.x=0.0, 1.0, 0.0});
+    Quaternion rotation // = Quaternion::rotator(0.25*PI, Vec3{.x=0.0, 1.0, 0.0});
+        = Quaternion::rotator(-1.0, Vec3{.x=1.0, 0.0, 0.0});
 
     {
         /* Set those parameters of the Parameters struct that are treated

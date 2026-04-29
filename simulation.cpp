@@ -1,7 +1,6 @@
 #include "simulation.hpp"
 #include "multi_surface.hpp"
 #include "reduce4d.hpp"
-#include "surface.hpp"
 #include "matrix.hpp"
 
 #include <iostream>
@@ -220,6 +219,18 @@ Frames::Frames(
     }),
     re_psi {Quad(sim_params), Quad(sim_params)},
     im_psi {Quad(sim_params), Quad(sim_params)},
+    slice_tmp({
+        .format=GL_RGBA32F,
+        // .width=power2(params.maxLog2TexWidth),
+        // .height=power2(params.maxLog2TexWidth),
+        .width=power2(params.log2TexWidth),
+        .height=power2(params.log2TexWidth),
+        .generate_mipmap=1,
+        .min_filter=default_tex_params.min_filter,
+        .mag_filter=default_tex_params.mag_filter,
+        .wrap_s=GL_REPEAT,
+        .wrap_t=GL_REPEAT
+    }),
     sim_tmp(Quad(sim_params)),
     potential(Quad(sim_params)),
     reductions{
@@ -293,6 +304,18 @@ void Frames::change_simulation_dimensions(const SimParams &params) {
     this->slices[1].reset(this->slice_xy_params);
     this->slices[2].reset(this->slice_xy_params);
     this->slices[3].reset(this->slice_xy_params);
+    this->slice_tmp.reset({
+        .format=GL_RGBA32F,
+        // .width=power2(params.maxLog2TexWidth),
+        // .height=power2(params.maxLog2TexWidth),
+        .width=power2(params.log2TexWidth),
+        .height=power2(params.log2TexWidth),
+        .generate_mipmap=1,
+        .min_filter=this->sim_params.min_filter,
+        .mag_filter=this->sim_params.mag_filter,
+        .wrap_s=GL_REPEAT,
+        .wrap_t=GL_REPEAT
+    });
     this->potential_slice.reset(this->slice_xy_params);
 
 }
@@ -312,6 +335,9 @@ Programs::Programs() {
     );
     this->uniform_color = Quad::make_program_from_path(
         "./shaders/util/uniform-color.frag"
+    );
+    this->merge_staggered_complex = Quad::make_program_from_path(
+        "./shaders/util/merge-staggered-complex.frag"
     );
     this->wave_packet = Quad::make_program_from_path(
          "./shaders/wavepacket/gaussian.frag"
@@ -358,6 +384,8 @@ Programs::Programs() {
     this->reduce_4x4 = Quad::make_program_from_path(
         "./shaders/util/reduce-4x4.frag"
     );
+    this->zero = Quad::make_program_from_path(
+        "./shaders/util/zero.frag");
 }
 
 void Simulation::initial_wave_function(
@@ -677,6 +705,42 @@ void Simulation::wave_func_xy_slice_view(
     );
 }
 
+void Simulation::wave_func_xy_slice_view(
+    Quad &dst, IVec2 slice_coordinates, 
+    const SimParams &params, float alpha) {
+    IVec4 tex_d_4d = get_texel_dimensions_4d(params.log2TexWidth);
+    this->m_frames.slices[2].draw(
+        m_programs.slice,
+        {
+            {"tex", &this->m_frames.re_psi[0]},
+            {"texelDimensions4D", tex_d_4d},
+            {"sliceCoordinates", slice_coordinates},
+            {"sliceIndices", params.sliceInd},
+            {"sampleIndices", params.sampleInd}
+        }
+    );
+    for (int i = 0; i < 2; i++) {
+        this->m_frames.slices[i].draw(
+            m_programs.slice,
+            {
+                {"tex", &this->m_frames.im_psi[i]},
+                {"texelDimensions4D", tex_d_4d},
+                {"sliceCoordinates", slice_coordinates},
+                {"sliceIndices", params.sliceInd},
+                {"sampleIndices", params.sampleInd}
+            }
+        );
+    }
+    dst.draw(
+        m_programs.merge_staggered_complex,
+        {
+            {"reTex", &m_frames.slices[2]},
+            {"imTex1", &m_frames.slices[0]},
+            {"imTex2", &m_frames.slices[1]},
+        }
+    );
+}
+
 void Simulation::entire_wave_func_view(const SimParams &params) {
     this->m_frames.render.draw(
         m_programs.visualization1,
@@ -741,6 +805,30 @@ const RenderTarget &Simulation::view(
             std::cout << "y descending\n";
             break;
         }
+        IVec4 tex_d_4d = get_texel_dimensions_4d(params.log2TexWidth);
+        if (hover.has_value() && 
+        (params.mouseUsage.selected == 1 
+            || params.mouseUsage.selected == 2)) {
+            Vec2 intersect = get_intersection_from_user_input(rotation, scale, *hover);
+            IVec2 slice_coordinates;
+            if (params.mouseUsage.selected == 1)
+                slice_coordinates = {.ind{
+                    int(intersect.x*float(tex_d_4d[0])),
+                    int(intersect.y*float(tex_d_4d[2]))
+                }};
+            else
+                slice_coordinates = {.ind{
+                    int(intersect.x*float(tex_d_4d[1])),
+                    int(intersect.y*float(tex_d_4d[3]))
+                }};
+            this->wave_func_xy_slice_view(
+                m_frames.slice_tmp, slice_coordinates, params,
+                params.transparency3);
+        } else {
+            this->m_frames.slice_tmp.draw(
+                m_programs.zero, {}
+            );
+        }
         m_frames.render.clear();
         particle1_prob_view(this->m_frames.slices[0], params);
         particle2_prob_view(this->m_frames.slices[1], params);
@@ -755,6 +843,8 @@ const RenderTarget &Simulation::view(
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         const int REAL_DATA_TYPE = 0;
         // const int COMPLEX_DATA_TYPE = 1;
+        const int COPY_OVER = 2;
+        const int COMPLEX_ABS_DATA_TYPE = 2;
         Uniforms vertex_uniforms = {
             {"heightTex1", &this->m_frames.slices[0]},
             {"heightDataType1", REAL_DATA_TYPE},
@@ -777,9 +867,11 @@ const RenderTarget &Simulation::view(
             {"heightTex3", &m_frames.potential_slice},
             {"heightDataType3", REAL_DATA_TYPE},
             {"heightScale3", params.potentialHeight/10.0F},
-            {"heightTex4", &m_frames.potential_slice},
-            {"heightDataType4", REAL_DATA_TYPE},
-            {"heightScale4", params.potentialHeight/10.0F},
+            {"heightTex4", &m_frames.slice_tmp},
+            {"heightDataType4", COMPLEX_ABS_DATA_TYPE},
+            {"heightScale4", params.height3 /
+                 (float(pow(2.0, params.log2TexWidth)))},
+            {"heightOffset4", 0.02F/params.height3},
             {"scale", scale},
             {"rotation", rotation},
             {"screenDimensions", screen_dimensions},
@@ -789,6 +881,7 @@ const RenderTarget &Simulation::view(
         };
         const int SINGLE_VALUE = 0;
         const int SCALAR_MAG = 1;
+        const int DOMAIN_COLOR_COMPLEX_ABS_VAL = 4;
         Uniforms fragment_uniforms = {
             {"tex1", &m_frames.slices[0]},
             {"drawType1", int(SCALAR_MAG)},
@@ -806,10 +899,10 @@ const RenderTarget &Simulation::view(
             {"drawType3", int(SINGLE_VALUE)},
             {"brightness3", params.potentialBrightness},
             {"color3", Vec4{.r=1.0, .g=1.0, .b=1.0, .a=0.1}},
-            {"tex4", &m_frames.potential_slice},
-            {"drawType4", int(SINGLE_VALUE)},
-            {"brightness4", params.potentialBrightness},
-            {"color4", Vec4{.r=1.0, .g=1.0, .b=1.0, .a=0.0}},
+            {"tex4", &m_frames.slice_tmp},
+            {"drawType4", int(DOMAIN_COLOR_COMPLEX_ABS_VAL)},
+            {"brightness4", params.brightness3},
+            {"color4", Vec4{.r=1.0, .g=1.0, .b=1.0, .a=params.transparency3}},
         };
         Uniforms uniforms {};
         for (auto &e: vertex_uniforms)
@@ -825,152 +918,6 @@ const RenderTarget &Simulation::view(
                 m_frames.view_params.width, 
                 m_frames.view_params.height)
         );
-        // uint32_t program = (params.colorPhase)? 
-        //     m_programs.surface_domain_color: m_programs.surface_mag_color_map;
-        /* uint32_t program = m_programs.surface_mag_color_map;
-        Uniforms vertex_uniforms1 = {
-            {"heightTex", &m_frames.slices[0]},
-            {"rotation", rotation},
-            {"screenDimensions", screen_dimensions},
-            {"translate", Vec3{.ind{0.0, 0.0, 0.0}}},
-            {"heightScale", 
-                    params.height2
-                    / (float(pow(2.0, 2.0*params.log2TexWidth))
-                        * 120)
-                },
-            {"scale", scale},
-            {"dimensions2D", 
-                IVec2{.ind{512, 512}}},
-            {"heightDataType", int(0)}
-        };
-        Uniforms vertex_uniforms2 = {
-            {"heightTex", &m_frames.slices[1]},
-            {"rotation", rotation},
-            {"screenDimensions", screen_dimensions},
-            {"translate", Vec3{.ind{0.0, 0.0, 0.0}}},
-            {"heightScale",
-                params.height2
-                    / (float(pow(2.0, 2.0*params.log2TexWidth))
-                        * 120)
-                }, // TODO!
-            {"scale", scale},
-            {"dimensions2D", 
-                IVec2{.ind{512, 512}}},
-            {"heightDataType", int(0)}
-        };
-        Uniforms mag_color_map_uniforms1 {
-            {"tex1", &m_frames.slices[0]},
-            {"tex2", &m_frames.slices[1]},
-            {"brightness",
-                    params.brightness2
-                    / float(pow(2.0, 2.0*params.log2TexWidth))},
-            {"color", Vec3{.r=1.0, .g=0.0, .b=0.0}},
-        };
-        Uniforms mag_color_map_uniforms2 {
-            {"tex1", &m_frames.slices[0]},
-            {"tex2", &m_frames.slices[1]},
-            {"brightness", 
-                    params.brightness1 
-                    / float(pow(2.0, 2.0*params.log2TexWidth))},
-            {"color", Vec3{.r=0.0, .g=0.0, .b=1.0}},
-        };
-        for (const auto &e: vertex_uniforms1)
-            mag_color_map_uniforms1.insert(e);
-        for (const auto &e: vertex_uniforms2)
-            mag_color_map_uniforms2.insert(e);
-        m_frames.render.draw(
-            program,
-            mag_color_map_uniforms1,
-            m_frames.surface,
-            Config::viewport(
-                0, 0, 
-                m_frames.view_params.width, 
-                m_frames.view_params.height)
-        );
-        m_frames.render.draw(
-            program,
-            mag_color_map_uniforms2,
-            m_frames.surface,
-            Config::viewport(
-                0, 0, 
-                m_frames.view_params.width, 
-                m_frames.view_params.height)
-        );
-        { 
-            Uniforms potential_single_color_uniforms {
-                {"heightTex", &m_frames.potential_slice},
-                {"heightScale", params.potentialHeight/10.0F},
-                {"rotation", rotation},
-                {"screenDimensions", screen_dimensions},
-                {"translate", Vec3{.ind{0.0, 0.0, 0.0}}},
-                {"heightScale", params.potentialBrightness}, // TODO!
-                {"scale", scale},
-                {"dimensions2D", 
-                    IVec2{.ind{512, 512}}},
-                {"heightDataType", int(0)},
-                {"color", Vec4{.r=1.0, .g=1.0, .b=1.0, .a=0.15},
-            }
-            };
-            m_frames.render.draw(
-                m_programs.surface_single_color,
-                potential_single_color_uniforms,
-                m_frames.surface,
-                Config::viewport(
-                    0, 0, 
-                    m_frames.view_params.width, 
-                    m_frames.view_params.height)
-            );
-        }
-        m_frames.render_tmp.clear();
-        if (hover.has_value() && 
-            (params.mouseUsage.selected == 1 
-            || params.mouseUsage.selected == 2)) {
-            Vec2 location = get_intersection_from_user_input(
-                rotation, scale, 
-                hover.value());
-            IVec4 tex_d_4d = get_texel_dimensions_4d(
-                params.log2TexWidth);
-            IVec2 slice_coordinates;
-            std::cout << "location x: " << location.x << std::endl;
-            std::cout << "location y: " << location.y << std::endl;
-            if (location.x > 0.0 && location.x < 1.0 && 
-                location.y > 0.0 && location.y < 1.0) {
-                if (params.mouseUsage.selected == 1)
-                    slice_coordinates = {.ind{
-                        int(location.x*float(tex_d_4d[0])),
-                        int(location.y*float(tex_d_4d[2]))
-                    }};
-                else
-                    slice_coordinates = {.ind{
-                        int(location.x*float(tex_d_4d[1])),
-                        int(location.y*float(tex_d_4d[3]))
-                    }};
-                this->wave_func_xy_slice_view(
-                    m_frames.render_tmp, slice_coordinates, params);
-                Uniforms uniforms = {
-                    {"heightTex", &m_frames.render_tmp},
-                    {"rotation", rotation},
-                    {"screenDimensions", screen_dimensions},
-                    {"translate", Vec3{.ind{0.0, 0.0, 0.0}}},
-                    {"heightScale", 10.0F*params.brightness3}, // TODO!
-                    {"scale", scale},
-                    {"dimensions2D", 
-                        IVec2{.ind{512, 512}}},
-                    {"heightDataType", int(0)},
-                    {"tex", &m_frames.render_tmp},
-                    {"brightness", params.brightness3}
-                };
-                m_frames.render.draw(
-                    m_programs.surface_domain_color,
-                    uniforms,
-                    m_frames.surface,
-                    Config::viewport(
-                        0, 0, 
-                        m_frames.view_params.width, 
-                        m_frames.view_params.height)
-                );
-            }
-        }*/
         glDisable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1000,6 +947,8 @@ const RenderTarget &Simulation::view(
             }};
         this->wave_func_xy_slice_view(
             m_frames.render_tmp, slice_coordinates, params);
+    } else {
+        m_frames.render_tmp.clear();
     }
     // std::cout << "particle1 prob texture width: " << (this->m_frames.slices[0].width()) << std::endl;
     particle1_prob_view(this->m_frames.slices[0], params);

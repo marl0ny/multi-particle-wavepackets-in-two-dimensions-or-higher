@@ -14,6 +14,7 @@ struct Frames {
     TextureParams slice_zw_params;
     Quad re_psi[2];
     Quad im_psi[2];
+    Quad slice_tmp;
     Quad sim_tmp;
     Quad potential;
     Quad reductions[9];
@@ -30,6 +31,7 @@ struct Frames {
 
 struct Programs {
     uint32_t scale, add2, add4_r, rgb_combine, uniform_color;
+    uint32_t merge_staggered_complex;
     uint32_t wave_packet, interaction;
     uint32_t time_step;
     uint32_t transpose_norm_squared, norm_squared, slice;
@@ -38,6 +40,7 @@ struct Programs {
     uint32_t four_surfaces;
     uint32_t visualization1, visualization2, perp_lines;
     uint32_t reduce_4x4;
+    uint32_t zero;
     uint32_t user_defined;
     Programs();
 };
@@ -56,6 +59,9 @@ class Simulation {
     void entire_wave_func_view(const SimParams &params);
     void wave_func_xy_slice_view(
         RenderTarget &dst, IVec2 slice_coordinates, const SimParams &params);
+    void wave_func_xy_slice_view(
+        Quad &dst, IVec2 slice_coordinates, 
+        const SimParams &params, float alpha);
     public:
     Simulation(
         const TextureParams &default_tex_params, 

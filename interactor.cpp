@@ -1,7 +1,7 @@
 #include "interactor.hpp"
 #include <cmath>
 
-double Interactor::scroll = 50.0;
+double Interactor::scroll = 100.0;
 
 Interactor::Interactor(GLFWwindow *window) {
     Interactor::attach_scroll_callback(window);
