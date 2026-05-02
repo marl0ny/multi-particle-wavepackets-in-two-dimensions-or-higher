@@ -800,10 +800,21 @@ def write_imgui_controls(
     with open(dst_file_name, "w") as f:
         f.write(file_contents)
 
-with open('parameters.json', 'r') as f:
-    parameters = json.loads(''.join([line for line in f]))
+def print_shaders():
+    import glob
+    shaders = glob.glob('./shaders/**', recursive=True)
+    print('SHADERS =', end=' ')
+    for e in shaders:
+        if e.endswith('.frag') or e.endswith('.vert'):
+            print(e, end=' ')
+    print()
 
-write_sliders_js(parameters, "sliders.js")
-write_imgui_controls(
-    parameters, "sim_2d", "parameters.hpp", "imgui_wrappers.hpp")
-write_typed_sim_parameters_hpp(parameters, "sim_2d", "parameters.hpp")
+if __name__ == '__main__':
+
+    with open('parameters.json', 'r') as f:
+        parameters = json.loads(''.join([line for line in f]))
+
+    write_sliders_js(parameters, "sliders.js")
+    write_imgui_controls(
+        parameters, "sim_2d", "parameters.hpp", "imgui_wrappers.hpp")
+    write_typed_sim_parameters_hpp(parameters, "sim_2d", "parameters.hpp")

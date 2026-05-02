@@ -112,7 +112,20 @@ vec4 getComplexWithAbsValFragmentColor(
     float im = texture2D(tex, UV)[1];
     float absVal = texture2D(tex, UV)[2];
     complex z = complex(re, im);
-    vec3 color = brightness*absVal*argumentToColor(atan(z.y, z.x));
+    #if (__VERSION__ >= 330) || (defined(GL_ES) && __VERSION__ >= 300)
+    if (isnan(z.x) || isnan(z.y) || isnan(absVal))
+        return vec4(vec3(0.0), alpha);
+    #endif
+    float angle = atan(z.y, z.x);
+    if (z.x == 0.0) {
+        if (z.y > 0.0)
+            angle = PI/2.0;
+        else if (z.y < 0.0)
+            angle = -PI/2.0;
+    }
+    vec3 color = brightness*absVal*argumentToColor(angle);
+    if (abs(z.x) < 1e-10 && abs(z.y) < 1e-10)
+        return vec4(vec3(0.0), alpha);
     return vec4(color, alpha);
 }
 
@@ -131,9 +144,9 @@ vec4 getFragmentColor(
 }
 
 void discardIfValuesSimilar(float val, vec4 vals, int i1, int i2, int i3) {
-    if (abs(val - vals[i1]) < 0.002 || 
-        abs(val - vals[i2]) < 0.002 || 
-        abs(val - vals[i3]) < 0.002)
+    if (abs(val - vals[i1]) < 0.01 || 
+        abs(val - vals[i2]) < 0.01 || 
+        abs(val - vals[i3]) < 0.01)
         discard;
 }
 
@@ -143,15 +156,15 @@ void main() {
         discard;
     if (int(SURFACE_IND) == 3) {
         fragColor = getFragmentColor(tex4, drawType4, brightness4, color4);
-        // discardIfValuesSimilar(HEIGHTS[3], HEIGHTS, 0, 1, 2);
+        discardIfValuesSimilar(HEIGHTS[3], HEIGHTS, 0, 1, 2);
     } else if (int(SURFACE_IND) == 2) {
         fragColor = getFragmentColor(tex3, drawType3, brightness3, color3);
-        // discardIfValuesSimilar(HEIGHTS[2], HEIGHTS, 0, 1, 3);
+        discardIfValuesSimilar(HEIGHTS[2], HEIGHTS, 0, 1, 3);
     } else if (int(SURFACE_IND) == 1) {
         fragColor = getFragmentColor(tex2, drawType2, brightness2, color2);
-        // discardIfValuesSimilar(HEIGHTS[1], HEIGHTS, 0, 2, 3);
+        discardIfValuesSimilar(HEIGHTS[1], HEIGHTS, 0, 2, 3);
     } else if (int(SURFACE_IND) == 0) {
         fragColor = getFragmentColor(tex1, drawType1, brightness1, color1);
-        // discardIfValuesSimilar(HEIGHTS[0], HEIGHTS, 1, 2, 3);
+        discardIfValuesSimilar(HEIGHTS[0], HEIGHTS, 1, 2, 3);
     }
 }

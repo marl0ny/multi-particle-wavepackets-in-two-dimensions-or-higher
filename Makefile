@@ -6,6 +6,7 @@ OBJECTS = matrix.o multi_surface.o surface.o parse.o \
 	user_edit_glsl.o reduce4d.o simulation.o \
 	main.o \
 	interactor.o gl_wrappers.o glfw_window.o
+SHADERS = ./shaders/visualization/d-color-wfn-gscale-pot.frag ./shaders/visualization/diff-particles-gscale-pot.frag ./shaders/potentials/coulomb-interaction-like.frag ./shaders/util/copy.frag ./shaders/util/scale.frag ./shaders/util/norm-squared.frag ./shaders/util/uniform-color.frag ./shaders/util/zero.frag ./shaders/util/reduce-4x4.frag ./shaders/util/perp-lines.frag ./shaders/util/merge-staggered-complex.frag ./shaders/util/transpose-hypercube-norm-squared.frag ./shaders/util/add2.frag ./shaders/util/add4-r.frag ./shaders/util/rgb-combine.frag ./shaders/util/slice-of-4d.frag ./shaders/surface/four-surfaces.frag ./shaders/surface/single-color.frag ./shaders/surface/mag-color-map.frag ./shaders/surface/surface.vert ./shaders/surface/four-surfaces.vert ./shaders/surface/domain-coloring.frag ./shaders/time-step/leapfrog.frag ./shaders/wavepacket/gaussian.frag
 
 SHELL = /bin/bash
 FLAGS = -O0 -g
@@ -40,7 +41,7 @@ all: ${TARGET}
 ${TARGET}: ${OBJECTS}
 	${CPP_COMPILE} ${FLAGS} -o $@ ${OBJECTS} ${LIBS}
 
-${WEB_TARGET}: ${SOURCES} ${GENERATED_DEPENDENCIES}
+${WEB_TARGET}: ${SOURCES} ${GENERATED_DEPENDENCIES} ${SHADERS}
 	emcc -lembind -o $@ ${SOURCES} ${INCLUDE} -std=c++17 -O3 -v -s WASM=2 -s USE_GLFW=3 -s MAX_WEBGL_VERSION=2 \
 	-s ALLOW_MEMORY_GROWTH=1 -s LLD_REPORT_UNDEFINED --embed-file shaders
 

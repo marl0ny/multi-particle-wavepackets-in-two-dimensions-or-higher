@@ -11,17 +11,17 @@ const ENUM_CODES = {
     LINE_DIV1: 9,
     SLIDER_SET_WAVE_FUNC_TITLE: 10,
     SHOW_INITIAL_WAVE_PACKET_AVERAGES: 11,
-    SYMMETRY_SELECTION: 12,
-    SYMMETRY: 13,
-    M1: 14,
-    M2: 15,
-    POS1: 16,
-    MOMENTUM1: 17,
-    SIGMA1: 18,
-    POS2: 19,
-    MOMENTUM2: 20,
-    SIGMA2: 21,
-    ENTER_WAVE_FUNC: 22,
+    ENTER_WAVE_FUNC: 12,
+    SYMMETRY_SELECTION: 13,
+    SYMMETRY: 14,
+    M1: 15,
+    M2: 16,
+    POS1: 17,
+    MOMENTUM1: 18,
+    SIGMA1: 19,
+    POS2: 20,
+    MOMENTUM2: 21,
+    SIGMA2: 22,
     LINE_DIV2: 23,
     MAX_LOG2_TEX_WIDTH: 24,
     LOG2_TEX_WIDTH: 25,
@@ -40,6 +40,7 @@ const ENUM_CODES = {
     HEIGHT3: 38,
     TRANSPARENCY3: 39,
     POTENTIAL_HEIGHT: 40,
+    SHOW3_D_CURSOR: 41,
 };
 
 function createScalarParameterSlider(
@@ -382,7 +383,7 @@ function createLineDivider(controls) {
 }
 
 let controls = document.getElementById('controls');
-createScalarParameterSlider(controls, 0, "Steps/frame", "int", {'value': 0, 'min': 0, 'max': 20});
+createScalarParameterSlider(controls, 0, "Steps/frame", "int", {'value': 3, 'min': 0, 'max': 20});
 createScalarParameterSlider(controls, 1, "particle 1 prob. density brightness", "float", {'value': 0.1, 'min': 0.0, 'max': 5.0, 'step': 0.001});
 createScalarParameterSlider(controls, 2, "particle 2 prob. density brightness", "float", {'value': 0.1, 'min': 0.0, 'max': 5.0, 'step': 0.001});
 createScalarParameterSlider(controls, 3, "Wave function slice brightness", "float", {'value': 0.1, 'min': 0.0, 'max': 5.0, 'step': 0.001});
@@ -392,19 +393,19 @@ createCheckbox(controls, 7, "Apply absorbing boundaries", true);
 createSelectionList(controls, 8, 0, "Mouse usage", [ "None",  "Visualize ψ(x1,  y1; (x2,  y2)=cursor location)",  "———— ψ((x1,  y1)=cursor location; x2,  y2)"]);
 createLineDivider(controls);
 createLabel(controls, 10, "New ψ(x1, y1; x2, y2) controls:", "color:white; font-family:Arial, Helvetica, sans-serif; font-weight: bold;");
-createCheckbox(controls, 11, "Show x(0) and p(0) expectation values with arrows", true);
-createSelectionList(controls, 12, 0, "Particle interchange symmetry: ", [ "None",  "Symmetric",  "Antisymmetric"]);
-createScalarParameterSlider(controls, 14, "mass 1", "float", {'value': 1.0, 'min': 1.0, 'max': 100.0, 'step': 0.1});
-createScalarParameterSlider(controls, 15, "mass 2", "float", {'value': 1.0, 'min': 1.0, 'max': 100.0, 'step': 0.1});
-createVectorParameterSliders(controls, 16, "x1, y1 (expressed as fraction of domain side length)", "Vec2", {'value': [0.25, 0.75], 'min': [0.0, 0.0], 'max': [1.0, 1.0], 'step': [0.01, 0.01]});
-createVectorParameterSliders(controls, 17, "momentum 1 (π radians)", "Vec2", {'value': [0.075, -0.075], 'min': [-0.25, -0.25], 'max': [0.25, 0.25], 'step': [0.001, 0.001]});
-createScalarParameterSlider(controls, 18, "size 1 (expressed as fraction of domain side length)", "float", {'value': 0.045, 'min': 0.02, 'max': 0.1, 'step': 0.001});
-createVectorParameterSliders(controls, 19, "x2, y2", "Vec2", {'value': [0.75, 0.25], 'min': [0.0, 0.0], 'max': [1.0, 1.0], 'step': [0.01, 0.01]});
-createVectorParameterSliders(controls, 20, "momentum 2", "Vec2", {'value': [-0.075, 0.075], 'min': [-0.25, -0.25], 'max': [0.25, 0.25], 'step': [0.001, 0.001]});
-createScalarParameterSlider(controls, 21, "size 2", "float", {'value': 0.045, 'min': 0.02, 'max': 0.1, 'step': 0.001});
-createButton(controls, 22, "Initialize new wave function");
+createCheckbox(controls, 11, "Show interactive GUI display for initial conditions", true);
+createButton(controls, 12, "Initialize new wave function");
+createSelectionList(controls, 13, 0, "Particle interchange symmetry: ", [ "None",  "Symmetric",  "Antisymmetric"]);
+createScalarParameterSlider(controls, 15, "mass 1", "float", {'value': 1.0, 'min': 1.0, 'max': 100.0, 'step': 0.1});
+createScalarParameterSlider(controls, 16, "mass 2", "float", {'value': 1.0, 'min': 1.0, 'max': 100.0, 'step': 0.1});
+createVectorParameterSliders(controls, 17, "x1, y1 (expressed as fraction of domain side length)", "Vec2", {'value': [0.25, 0.75], 'min': [0.0, 0.0], 'max': [1.0, 1.0], 'step': [0.01, 0.01]});
+createVectorParameterSliders(controls, 18, "momentum 1 (π radians)", "Vec2", {'value': [0.075, -0.075], 'min': [-0.25, -0.25], 'max': [0.25, 0.25], 'step': [0.001, 0.001]});
+createScalarParameterSlider(controls, 19, "size 1 (expressed as fraction of domain side length)", "float", {'value': 0.045, 'min': 0.02, 'max': 0.1, 'step': 0.001});
+createVectorParameterSliders(controls, 20, "x2, y2", "Vec2", {'value': [0.75, 0.25], 'min': [0.0, 0.0], 'max': [1.0, 1.0], 'step': [0.01, 0.01]});
+createVectorParameterSliders(controls, 21, "momentum 2", "Vec2", {'value': [-0.075, 0.075], 'min': [-0.25, -0.25], 'max': [0.25, 0.25], 'step': [0.001, 0.001]});
+createScalarParameterSlider(controls, 22, "size 2", "float", {'value': 0.045, 'min': 0.02, 'max': 0.1, 'step': 0.001});
 createLineDivider(controls);
-createScalarParameterSlider(controls, 25, "log2(domain side length)", "int", {'value': 5, 'min': 5, 'max': 7});
+createScalarParameterSlider(controls, 25, "log2(domain side length)", "int", {'value': 6, 'min': 5, 'max': 7});
 createScalarParameterSlider(controls, 28, "Time step", "float", {'value': 0.06, 'min': 0.0, 'max': 0.08, 'step': 0.001});
 createSelectionList(controls, 31, 0, "Preset V(x, y, t)", [ "0",  "amp*((x/width)^2 + (y/height)^2)",  "3.8*(step(-y^2+(height*0.04*s1)^2)+step(y^2-(height*0.06*s2)^2))*step(-x^2+(width*0.04*w)^2)",  "1.0/sqrt(x^2+y^2)+1.0/sqrt((x-0.25*width)^2+(y-0.25*height)^2)",  "0.5*(x*cos(w*t/200)/width + y*sin(w*t/200)/height)",  "0.5*(tanh(75.0*(((x/width)^2+(y/height)^2)^0.5-0.45))+1.0)"]);
 createEntryBoxes(controls, 32, "Enter potential V(x, y, t) (value clampled to prevent instability)", 1, []);
@@ -413,7 +414,8 @@ createCheckbox(controls, 34, "Show 3D surface height views", false);
 createScalarParameterSlider(controls, 35, "particle prob. density height", "float", {'value': 1.0, 'min': 0.1, 'max': 10.0, 'step': 0.1});
 createScalarParameterSlider(controls, 36, "transparency 1", "float", {'value': 0.75, 'min': 0.05, 'max': 1.0, 'step': 0.01});
 createScalarParameterSlider(controls, 37, "transparency 2", "float", {'value': 0.25, 'min': 0.05, 'max': 1.0, 'step': 0.01});
-createScalarParameterSlider(controls, 38, "Wave function slice height", "float", {'value': 0.25, 'min': 0.05, 'max': 10.0, 'step': 0.1});
+createScalarParameterSlider(controls, 38, "Wave function slice height", "float", {'value': 0.25, 'min': 0.05, 'max': 1.0, 'step': 0.01});
 createScalarParameterSlider(controls, 39, "Wave function slice transparency", "float", {'value': 1.0, 'min': 0.05, 'max': 1.0, 'step': 0.01});
 createScalarParameterSlider(controls, 40, "Potential height", "float", {'value': 1.0, 'min': 0.0, 'max': 10.0, 'step': 0.1});
+createCheckbox(controls, 41, "Show 3D cursor position", false);
 

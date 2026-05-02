@@ -92,7 +92,7 @@ void imgui_controls(void *void_params) {
     }
     ImGui::Text("--------------------------------------------------------------------------------");
     ImGui::Text("New ψ(x1, y1; x2, y2) controls:");
-    ImGui::Checkbox("Show x(0) and p(0) expectation values with arrows", &params->showInitialWavePacketAverages);
+    ImGui::Checkbox("Show interactive GUI display for initial conditions", &params->showInitialWavePacketAverages);
     if (ImGui::BeginMenu("Particle interchange symmetry: ")) {
         if (ImGui::MenuItem( "None"))
             s_selection_set(params->SYMMETRY_SELECTION, 0);
@@ -158,12 +158,13 @@ void imgui_controls(void *void_params) {
            s_sim_params_set(params->TRANSPARENCY1, params->transparency1);
     if (ImGui::SliderFloat("transparency 2", &params->transparency2, 0.05, 1.0))
            s_sim_params_set(params->TRANSPARENCY2, params->transparency2);
-    if (ImGui::SliderFloat("Wave function slice height", &params->height3, 0.05, 10.0))
+    if (ImGui::SliderFloat("Wave function slice height", &params->height3, 0.05, 1.0))
            s_sim_params_set(params->HEIGHT3, params->height3);
     if (ImGui::SliderFloat("Wave function slice transparency", &params->transparency3, 0.05, 1.0))
            s_sim_params_set(params->TRANSPARENCY3, params->transparency3);
     if (ImGui::SliderFloat("Potential height", &params->potentialHeight, 0.0, 10.0))
            s_sim_params_set(params->POTENTIAL_HEIGHT, params->potentialHeight);
+    ImGui::Checkbox("Show 3D cursor position", &params->show3DCursor);
 
 }
 

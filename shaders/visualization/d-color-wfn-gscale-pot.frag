@@ -83,8 +83,19 @@ void main() {
     complex z1 = complex(re, im);
     complex phaseFactor = complex(cos(phaseAdjust), sin(phaseAdjust));
     complex z2 = mul(phaseFactor, z1);
+    float angle = atan(z2.y, z2.x);
     vec3 color = waveFunctionBrightness
-        *sqrt(absVal2)*argumentToColor(atan(z2.y, z2.x));
+        *sqrt(absVal2)*argumentToColor(angle);
     // float potential = texture2D(potentialTex, UV)[0];
     fragColor = vec4(color, alpha);
+    #if (__VERSION__ >= 330) || (defined(GL_ES) && __VERSION__ >= 300)
+    if (isnan(z2.x) || isnan(z2.y) || isnan(absVal2))
+        fragColor = vec4(vec3(0.0), alpha);
+    #endif
+    if (z2.x == 0.0) {
+        if (z2.y > 0.0)
+            angle = PI/2.0;
+        else if (z2.y < 0.0)
+            angle = -PI/2.0;
+    }
 }

@@ -121,6 +121,10 @@ float getHeight(sampler2D heightTex, int heightDataType) {
         height = z.x*z.x + z.y*z.y;
     } else if (heightDataType == COMPLEX_ABS_DATA_TYPE) {
         height = texture2D(heightTex, UV).z;
+        #if (__VERSION__ >= 330) || (defined(GL_ES) && __VERSION__ >= 300)
+        if (isnan(height))
+            height = 0.0;
+        #endif
     }
     return height;
 }

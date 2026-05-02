@@ -25,5 +25,9 @@ void main() {
     float re = texture2D(reTex, UV)[0];
     float im = (texture2D(imTex1, UV)[0] + texture2D(imTex2, UV)[0])/2.0;
     float absVal2 = re*re + texture2D(imTex1, UV)[0]*texture2D(imTex2, UV)[0];
+    // if (isnan(absVal2) || isinf(absVal2))
+    //     fragColor = vec4(0.0);
+    // if (!(absVal2 != 0.0 && absVal2 == absVal2))
+    //     fragColor = vec4(0.0);
     fragColor = vec4(re, im, sqrt(absVal2), sqrt(absVal2));
 }

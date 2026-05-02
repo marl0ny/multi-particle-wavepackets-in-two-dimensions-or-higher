@@ -178,6 +178,15 @@ Quaternion Quaternion::operator*(const Quaternion &q) const {
     };
 }
 
+Quaternion Quaternion::operator*(float f) const {
+    return {
+        .real=this->real*f,
+        .i=this->i*f,
+        .j=this->j*f,
+        .k=this->k*f
+    };
+}
+
 Quaternion Quaternion::operator/(double val) const {
     return {
         .real=real/(float)val, 

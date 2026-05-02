@@ -73,6 +73,51 @@ static Vec2 get_intersection_from_user_input(
     return location2d;
 }
 
+static Quaternion project(Quaternion x, IVec2 screen_dimensions) {
+    Quaternion y;
+    y.i = x.i*4.0/(x.k + 4.0);
+    y.j = float(screen_dimensions[0])/float(screen_dimensions[1])
+            *x.j*4.0/(x.k + 4.0);
+    y.k = x.k/4.0;
+    y.real = 1.0;
+    return y;
+}
+
+static WireFrame hover_cursor_line_wire_frame(
+    Quaternion rotation, float scale, Vec2 intersection_position, 
+    IVec2 screen_dimensions) {
+    float x_int = intersection_position.x - 0.5F;
+    float y_int = intersection_position.y - 0.5F;
+    // std::cout << x_int << ", " << y_int << std::endl;
+    Quaternion start {.real=1.0, 
+        .i=x_int, .j=y_int, .k=0.0};
+    Quaternion end {.real=1.0,
+        .i=x_int, .j=y_int, .k=-0.25};
+    Quaternion bo {.real=1.0, .i=x_int, .j=-0.5, .k=-0.25};
+    Quaternion up {.real=1.0, .i=x_int, .j=0.5, .k=-0.25};
+    Quaternion le {.real=1.0, .i=-0.5, .j=y_int, .k=-0.25};
+    Quaternion ri {.real=1.0, .i=0.5, .j=y_int, .k=-0.25};
+    start = project(rotate(start*scale, rotation), screen_dimensions);
+    end = project(rotate(end*scale, rotation), screen_dimensions);
+    bo = project(rotate(bo*scale, rotation), screen_dimensions);
+    up = project(rotate(up*scale, rotation), screen_dimensions);
+    le = project(rotate(le*scale, rotation), screen_dimensions);
+    ri = project(rotate(ri*scale, rotation), screen_dimensions);
+    return WireFrame(
+        {{"position", Attribute{.size=3, .type=GL_FLOAT, false, 0, 0}}},
+        std::vector<float> {
+            start.i, start.j, start.k,
+            end.i, end.j, end.k,
+            bo.i, bo.j, bo.k,
+            up.i, up.j, up.k,
+            le.i, le.j, le.k,
+            ri.i, ri.j, ri.k
+        }, 
+        std::vector<int> {0, 1, 2, 1, 3, 1, 4, 1, 5, 1},
+        WireFrame::LINES
+    );
+}
+
 
 static WireFrame get_perp_lines_wire_frame(
     Vec2 intersection_position
@@ -809,21 +854,28 @@ const RenderTarget &Simulation::view(
         if (hover.has_value() && 
         (params.mouseUsage.selected == 1 
             || params.mouseUsage.selected == 2)) {
-            Vec2 intersect = get_intersection_from_user_input(rotation, scale, *hover);
-            IVec2 slice_coordinates;
-            if (params.mouseUsage.selected == 1)
-                slice_coordinates = {.ind{
-                    int(intersect.x*float(tex_d_4d[0])),
-                    int(intersect.y*float(tex_d_4d[2]))
-                }};
-            else
-                slice_coordinates = {.ind{
-                    int(intersect.x*float(tex_d_4d[1])),
-                    int(intersect.y*float(tex_d_4d[3]))
-                }};
-            this->wave_func_xy_slice_view(
-                m_frames.slice_tmp, slice_coordinates, params,
-                params.transparency3);
+            Vec2 intersect 
+                = get_intersection_from_user_input(rotation, scale, *hover);
+            if (intersect.x > 0.0 && intersect.x < 1.0 && 
+                intersect.y > 0.0 && intersect.y < 1.0) {
+                IVec2 slice_coordinates;
+                if (params.mouseUsage.selected == 1)
+                    slice_coordinates = {.ind{
+                        int(intersect.x*float(tex_d_4d[0])),
+                        int(intersect.y*float(tex_d_4d[2]))
+                    }};
+                else
+                    slice_coordinates = {.ind{
+                        int(intersect.x*float(tex_d_4d[1])),
+                        int(intersect.y*float(tex_d_4d[3]))
+                    }};
+                this->wave_func_xy_slice_view(
+                    m_frames.slice_tmp, slice_coordinates, params,
+                    params.transparency3);
+            } else {
+                this->m_frames.slice_tmp.draw(
+                    m_programs.zero, {});
+            }
         } else {
             this->m_frames.slice_tmp.draw(
                 m_programs.zero, {}
@@ -841,6 +893,24 @@ const RenderTarget &Simulation::view(
         glDepthFunc(GL_LESS);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        if (params.show3DCursor && hover.has_value()) {
+            Vec2 intersect = get_intersection_from_user_input(
+                rotation, scale, *hover);
+            if (intersect.x > 0.0 && intersect.x < 1.0 && 
+                intersect.y > 0.0 && intersect.y < 1.0) {
+                WireFrame cursor = hover_cursor_line_wire_frame(
+                    rotation, scale, intersect, 
+                    IVec2{
+                        .x=(int)m_frames.view_params.width,
+                        .y=(int)m_frames.view_params.height});
+                // if intersect.x < 
+                this->m_frames.render.draw(
+                    m_programs.uniform_color, 
+                {{"color", Vec4{.r=1.0, 1.0, 1.0, 0.25}}},
+                    cursor
+                );
+            }
+        }
         const int REAL_DATA_TYPE = 0;
         // const int COMPLEX_DATA_TYPE = 1;
         const int COPY_OVER = 2;

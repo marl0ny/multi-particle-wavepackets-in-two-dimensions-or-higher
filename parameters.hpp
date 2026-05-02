@@ -25,7 +25,7 @@ struct LineDivider {};
 struct NotUsed {};
 
 struct SimParams {
-    int stepsPerFrame = (int)(0);
+    int stepsPerFrame = (int)(3);
     float brightness1 = (float)(0.1F);
     float brightness2 = (float)(0.1F);
     float brightness3 = (float)(0.1F);
@@ -37,6 +37,7 @@ struct SimParams {
     LineDivider lineDiv1 = LineDivider{};
     Label sliderSetWaveFuncTitle = Label{};
     bool showInitialWavePacketAverages = (bool)(true);
+    Button enterWaveFunc = Button{};
     SelectionList symmetrySelection = SelectionList{0, {"None", "Symmetric", "Antisymmetric"}};
     int symmetry = (int)(0);
     float m1 = (float)(1.0F);
@@ -47,10 +48,9 @@ struct SimParams {
     Vec2 pos2 = (Vec2)(Vec2 {.ind={0.75, 0.25}});
     Vec2 momentum2 = (Vec2)(Vec2 {.ind={-0.075, 0.075}});
     float sigma2 = (float)(0.045F);
-    Button enterWaveFunc = Button{};
     LineDivider lineDiv2 = LineDivider{};
     int maxLog2TexWidth = (int)(7);
-    int log2TexWidth = (int)(5);
+    int log2TexWidth = (int)(6);
     IVec2 sliceInd = (IVec2)(IVec2 {.ind={1, 3}});
     IVec2 sampleInd = (IVec2)(IVec2 {.ind={0, 2}});
     float dt = (float)(0.06F);
@@ -66,6 +66,7 @@ struct SimParams {
     float height3 = (float)(0.25F);
     float transparency3 = (float)(1.0F);
     float potentialHeight = (float)(1.0F);
+    bool show3DCursor = (bool)(false);
     enum {
         STEPS_PER_FRAME=0,
         BRIGHTNESS1=1,
@@ -79,17 +80,17 @@ struct SimParams {
         LINE_DIV1=9,
         SLIDER_SET_WAVE_FUNC_TITLE=10,
         SHOW_INITIAL_WAVE_PACKET_AVERAGES=11,
-        SYMMETRY_SELECTION=12,
-        SYMMETRY=13,
-        M1=14,
-        M2=15,
-        POS1=16,
-        MOMENTUM1=17,
-        SIGMA1=18,
-        POS2=19,
-        MOMENTUM2=20,
-        SIGMA2=21,
-        ENTER_WAVE_FUNC=22,
+        ENTER_WAVE_FUNC=12,
+        SYMMETRY_SELECTION=13,
+        SYMMETRY=14,
+        M1=15,
+        M2=16,
+        POS1=17,
+        MOMENTUM1=18,
+        SIGMA1=19,
+        POS2=20,
+        MOMENTUM2=21,
+        SIGMA2=22,
         LINE_DIV2=23,
         MAX_LOG2_TEX_WIDTH=24,
         LOG2_TEX_WIDTH=25,
@@ -108,6 +109,7 @@ struct SimParams {
         HEIGHT3=38,
         TRANSPARENCY3=39,
         POTENTIAL_HEIGHT=40,
+        SHOW3_D_CURSOR=41,
     };
     void set(int enum_val, Uniform val) {
         switch(enum_val) {
@@ -207,6 +209,9 @@ struct SimParams {
             case POTENTIAL_HEIGHT:
             potentialHeight = val.f32;
             break;
+            case SHOW3_D_CURSOR:
+            show3DCursor = val.b32;
+            break;
         }
     }
     Uniform get(int enum_val) const {
@@ -275,6 +280,8 @@ struct SimParams {
             return {(float)transparency3};
             case POTENTIAL_HEIGHT:
             return {(float)potentialHeight};
+            case SHOW3_D_CURSOR:
+            return {(bool)show3DCursor};
         }
         return Uniform(0);
     }
